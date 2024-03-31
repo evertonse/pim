@@ -10,102 +10,60 @@ main :: proc () {
     assert(SCREEN_HEIGHT*SCREEN_WIDTH > 0)
     assert(IMAGE_HEIGHT*IMAGE_WIDTH > 0)
 
-    loop(render);
+    loop();
 }
 
-U32Img :: struct {
-    width, height :i32,
-    data: [^]u32,
-}
-
-Vector3  :: #type rl.Vector3
+Image    :: #type rl.Image
 Color    :: #type rl.Vector3
+Vector3  :: #type rl.Vector3
 
-vector3_near_zero :: proc (self: Vector3) -> bool {
-    s :f32 = 1e-8;
-    return math.abs(self[0]) < s && math.abs(self[1]) < s && math.abs(self[2]) < s;
+transform :: proc(color: rl.Color) -> rl.Color {
+    r, g, b, a := expand_values(color)
+    // if true do return {r,b,g,a};
+
+    rf := f32(r)/f32(255);
+    gf := f32(g)/f32(255);
+    bf := f32(b)/f32(255);
+
+    rf = math.pow(rf, 1.0/f32(GAMMA));
+    gf = math.pow(gf, 1.0/f32(GAMMA));
+    bf = math.pow(bf, 1.0/f32(GAMMA));
+
+    // rf := math.log(f32(r), 10);
+    // gf := math.log(f32(g), 10);
+    // bf := math.log(f32(b), 10);
+
+
+    // rf = 20.0 + math.log(f32(r), 10);
+    // gf = 20.0 + math.log(f32(g), 10);
+    // bf = 20.0 + math.log(f32(b), 10);
+
+    @static min, max :f32 = 0.0, 0.999
+    r = u8(256 * math.clamp(rf, min, max));
+    g = u8(256 * math.clamp(gf, min, max));
+    b = u8(256 * math.clamp(bf, min, max));
+
+    return {r,b,g,a};
 }
 
-vector3_random :: proc (min :f32 = 0, max:f32 = 1.0) -> Vector3 {
-    return {rand.float32_range(min, max), rand.float32_range(min, max), rand.float32_range(min, max)};
-}
+img_transform ::  #force_inline proc(img: Image) -> Image {
+    @static IMG_DATA: [4000*4000]u32;
+    data := IMG_DATA[:]
 
-vector3_random_in_unit_sphere :: proc() -> Vector3 {
-    for true {
-        p := vector3_random(-1,1)
-        if la.dot(p, p) < 1 {
-            return p
-        }
-    }
-    return {}
-}
-
-vector3_random_unit :: proc() -> Vector3 {
-    return la.normalize(vector3_random_in_unit_sphere())
-}
-
-vector3_random_on_hemisphere :: proc(normal: Vector3) -> Vector3 {
-    on_unit_sphere := vector3_random_unit();
-    // In the same hemisphere as the normal
-    if la.dot(on_unit_sphere, normal) > 0.0 do return on_unit_sphere;
-    return -on_unit_sphere;
-}
-
-render ::  #force_inline proc(data: []u32) -> U32Img {
-        // Get a randomly-sampled camera ray for the pixel at location i,j, originating from
-        // the camera defocus disk.
-
-    pixel_sample_square :: proc(pixel_delta_u, pixel_delta_v: Vector3) -> Color {
-        // Returns a random point in the square surrounding a pixel at the origin.
-        px := -0.5 + rand.float32_range(0, 1.0)
-        py := -0.5 + rand.float32_range(0, 1.0)
-        return (px * pixel_delta_u) + (py * pixel_delta_v);
-    }
-
-    color_u32 :: proc(color: Color, samples_per_pixel: int = 1) -> u32 {
-        rf, gf, bf := expand_values(color)
-        // Divide the color by the number of samples.
-        scale := 1.0 / f32(samples_per_pixel);
-        rf *= scale;
-        gf *= scale;
-        bf *= scale;
-
-        rf = math.pow(rf, 1.0/f32(GAMMA));
-        gf = math.pow(gf, 1.0/f32(GAMMA));
-        bf = math.pow(bf, 1.0/f32(GAMMA));
-
-        @static min, max :f32 = 0.0, 0.999
-        // assert(r <= 1.0 && g <= 1.0 && b <= 1.0)
-        r := u32(256 * math.clamp(rf, min, max));
-        g := u32(256 * math.clamp(gf, min, max));
-        b := u32(256 * math.clamp(bf, min, max));
-
-        a := u32(0xff)
-        color_as_u32 :u32 =  (a << 24) | (b << 16) | (g << 8) | (r);
-        return color_as_u32;
-    }
-
-
-    camera_lookfrom := Vector3{0,0,0}
-    camera_lookat   := Vector3{0,0,-1}
-    camera_up       := Vector3{0,1,0}
-
-
-    // camera_lookfrom = Vector3{-1.5,3, 0.5}
-    // camera_lookat   = Vector3{0,0,-2}
-    // camera_up       = Vector3{0,1,0}
-    width, height : i32 = IMAGE_WIDTH, IMAGE_HEIGHT
-
+    width, height : i32 = img.width, img.height
     for j in 0..<height {
         for i in 0..<width {
-            x,y: f32 = f32(i),f32(j)
-            pixel_color := Color{0,0,0}
-            data[j*width + i] = color_u32(pixel_color)
+            x,y: = i,j
+            color := rl.GetImageColor(img,x,y)
+            // data[j*width + i] = transmute(u32) color
+            data[j*width + i] = transmute(u32) transform(color)
         }
     }
 
-
-    img := U32Img{data = raw_data(data), width = auto_cast width, height = auto_cast height}
+    img := img
+    img.data = raw_data(data)
+    img.mipmaps = 1
+    img.format = rl.PixelFormat.UNCOMPRESSED_R8G8B8A8
 
     assert(img.height > 1 && img.width > 1)
     return img
@@ -113,8 +71,7 @@ render ::  #force_inline proc(data: []u32) -> U32Img {
 
 
 
-Render_Func:: #type proc(data: []u32) -> U32Img;
-loop :: proc(img_gen :Render_Func) {
+loop :: proc() {
 
     title :: proc () -> cstring {
         return rl.TextFormat("FPS: %v\n", rl.GetFPS())
@@ -122,48 +79,41 @@ loop :: proc(img_gen :Render_Func) {
 
 
     rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, title=title());
-
     rl.SetConfigFlags({.WINDOW_RESIZABLE})
-
-
-
     rl.SetTargetFPS(60);
 
 
-    @static IMG_DATA: [4000*4000]u32;
 
-    data := IMG_DATA[:]
-    img : rl.Image;
-    img.format = rl.PixelFormat.UNCOMPRESSED_R8G8B8A8
-    img.mipmaps = 1
+    original_img := rl.LoadImage(IMG_FILE_PATH)
+    original_texture := rl.LoadTextureFromImage(original_img);
 
-    u32img : U32Img;
-
-    u32img = img_gen(data)
-
-    img.data = u32img.data;
-    img.width = u32img.width;
-    img.height = u32img.height;
-
+    img := img_transform(original_img)
     texture := rl.LoadTextureFromImage(img);
-    { // Render as png just once
-        u32img = img_gen(data)
-        img.data = u32img.data;
-        rl.ExportImage(img, fmt.ctprintf("img.png"))
-    }
+
+    fmt.print(img)
+    rl.ExportImage(img, fmt.ctprintf("img.png"))
+    // if true do panic("lol")
 
     for !rl.WindowShouldClose() {
         rl.SetWindowTitle(title())
         rl.BeginDrawing();
         rl.ClearBackground(rl.DARKBLUE);
-        u32img = img_gen(data)
-        img.data = u32img.data;
+
+        img = img_transform(original_img)
         rl.UpdateTexture(texture, img.data);
         rl.DrawFPS(10, 10);
+
+        rl.DrawTexture(original_texture,  0,  SCREEN_HEIGHT / 2 - (img.height/2), rl.WHITE);
         rl.DrawTexture(texture, SCREEN_WIDTH / 2 - (img.width/2) , SCREEN_HEIGHT / 2 - (img.height/2), rl.WHITE);
-        rl.DrawText("This IS a texture loaded from raw image data!", 300, 370, 10, rl.RAYWHITE);
+
+        font_size : i32 = 20
+        rl.DrawText("Original Image", 0,  SCREEN_HEIGHT / 2 - (img.height/2),font_size, rl.BLACK);
+        rl.DrawText("Rendered Image", SCREEN_WIDTH / 2 - (img.width/2) , SCREEN_HEIGHT / 2 - (img.height/2), font_size, rl.BLACK);
+
+        
         rl.EndDrawing();
     }
+    rl.UnloadImage(img)
 
     rl.CloseWindow();
 }

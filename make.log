@@ -1,0 +1,3 @@
+rm -f bin/*.bin
+mkdir -p bin/
+odin build src -out:bin/pim
