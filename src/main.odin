@@ -25,13 +25,13 @@ transform :: proc(color: rl.Color) -> rl.Color {
     gf := f32(g)/f32(255);
     bf := f32(b)/f32(255);
 
-    rf = math.pow(rf, 1.0/f32(GAMMA));
-    gf = math.pow(gf, 1.0/f32(GAMMA));
-    bf = math.pow(bf, 1.0/f32(GAMMA));
+    // rf = math.pow(rf, 1.0/f32(GAMMA));
+    // gf = math.pow(gf, 1.0/f32(GAMMA));
+    // bf = math.pow(bf, 1.0/f32(GAMMA));
 
-    // rf := math.log(f32(r), 10);
-    // gf := math.log(f32(g), 10);
-    // bf := math.log(f32(b), 10);
+    rf = math.log(f32(r), 10);
+    gf = math.log(f32(g), 10);
+    bf = math.log(f32(b), 10);
 
 
     // rf = 20.0 + math.log(f32(r), 10);
