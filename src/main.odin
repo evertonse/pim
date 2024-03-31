@@ -29,16 +29,30 @@ transform :: proc(color: rl.Color) -> rl.Color {
     // gf = math.pow(gf, 1.0/f32(GAMMA));
     // bf = math.pow(bf, 1.0/f32(GAMMA));
 
-    rf = math.log(f32(r), 10);
-    gf = math.log(f32(g), 10);
-    bf = math.log(f32(b), 10);
+
+    /*
+     . Log of any base bigger than one is trash, we ought to get only negative numbers
+     . unless we take abs of the result
+    */
+    // rf = math.log(rf, 1.0/10);
+    // gf = math.log(gf, 1.0/10);
+    // bf = math.log(bf, 1.0/10);
+
+    rf = -math.log(rf, 10);
+    gf = -math.log(gf, 10);
+    bf = -math.log(bf, 10);
+
+
+    rf = 1.0 - rf
+    gf = 1.0 - gf
+    bf = 1.0 - bf
 
 
     // rf = 20.0 + math.log(f32(r), 10);
     // gf = 20.0 + math.log(f32(g), 10);
     // bf = 20.0 + math.log(f32(b), 10);
 
-    @static min, max :f32 = 0.0, 0.999
+    @static min, max :f32 = 0.0, 0.99999
     r = u8(256 * math.clamp(rf, min, max));
     g = u8(256 * math.clamp(gf, min, max));
     b = u8(256 * math.clamp(bf, min, max));
@@ -85,6 +99,7 @@ loop :: proc() {
 
 
     original_img := rl.LoadImage(IMG_FILE_PATH)
+    defer rl.UnloadImage(original_img)
     original_texture := rl.LoadTextureFromImage(original_img);
 
     img := img_transform(original_img)
@@ -113,7 +128,6 @@ loop :: proc() {
         
         rl.EndDrawing();
     }
-    rl.UnloadImage(img)
 
     rl.CloseWindow();
 }
