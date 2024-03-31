@@ -1,0 +1,19 @@
+{
+	"collections": [
+    {
+      "name": "shared",
+      "path": "./src"
+    },
+		{
+			"name": "core", 
+			"path": "/home/excyber/code/odin-lang/core/"
+		},
+	], 
+	"enable_document_symbols": true, 
+	"enable_semantic_tokens": true, 
+  "enable_references": true,
+	"enable_hover": true, 
+	"enable_snippets": true, 
+  "enable_fake_methods": true,
+  "verbose": false,
+}
