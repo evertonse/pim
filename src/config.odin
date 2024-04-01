@@ -14,7 +14,9 @@ VIEWPORT_WIDTH  :f32 = VIEWPORT_HEIGHT * (f32(IMAGE_WIDTH)/f32(IMAGE_HEIGHT));
 VIEWPORT_HEIGHT :f32 = 2.0
 GAMMA :: 2
 
-IMG_FILE_PATH :: "./assets/images/porto.png"
+// IMG_FILE_PATH :: "./assets/images/porto.png"
+// IMG_FILE_PATH :: "./assets/images/lua.png"
+IMG_FILE_PATH :: "./assets/images/beans.png"
 
 import math "core:math"
 

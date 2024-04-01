@@ -38,14 +38,14 @@ transform :: proc(color: rl.Color) -> rl.Color {
     // gf = math.log(gf, 1.0/10);
     // bf = math.log(bf, 1.0/10);
 
-    rf = -math.log(rf, 10);
-    gf = -math.log(gf, 10);
-    bf = -math.log(bf, 10);
+    // rf = -math.log(rf, 10);
+    // gf = -math.log(gf, 10);
+    // bf = -math.log(bf, 10);
 
 
-    rf = 1.0 - rf
-    gf = 1.0 - gf
-    bf = 1.0 - bf
+    // rf = 1.0 - rf
+    // gf = 1.0 - gf
+    // bf = 1.0 - bf
 
 
     // rf = 20.0 + math.log(f32(r), 10);
@@ -57,14 +57,83 @@ transform :: proc(color: rl.Color) -> rl.Color {
     g = u8(256 * math.clamp(gf, min, max));
     b = u8(256 * math.clamp(bf, min, max));
 
+    // mask :u8= 0b0_1_1_1_1_1_1_1
+    mask :u8 = 0b1_0_0_0_0_0_0_0
+    // mask :u8= 0b0_0_0_0_1_1_1_1
+    // r &= mask
+    // g &= mask
+    // b &= mask
+
+    r = linear_by_parts(r)
+    g = linear_by_parts(g)
+    b = linear_by_parts(b)
+
+
     return {r,b,g,a};
 }
+
+
+linear_by_parts :: proc(
+    source: u8,
+    s1 : f32 = 89,
+    d1 : f32 = 0,
+    s2 : f32 = 255,
+    d2 : f32 = 255,
+) -> u8 {
+    d : f32  = 0;
+    s : f32  = f32(source)
+
+    MAX : f32 = 255
+
+    if s >= 0 && s < s1 {
+        // Segment 1: 0 at s1
+        d = (cast(f32)d1 / s1) * s;
+    } else if s >= s1 && s <= s2 {
+        // Segment 2: s1 at s2
+        if s2 - s1 == 0.0 {
+            d = d1
+        } else {
+            d = ((cast(f32)d2 - d1) / (s2 - s1))*(s-s2) +  d2
+        }
+    } else if s > s2 && s <= 255 {
+        // Segment 3: s2 at 255
+        if (MAX - d2) == 0.0 {
+            d = MAX
+        } else {
+            d = ((MAX - d2) / (MAX - s2))*(s - MAX) +  MAX
+        }
+    } else {
+        // If s is outside the range [0, 255]
+        panic("Valor de s fora do intervalo permitido.\n");
+    }
+    return u8(d);
+}
+
 
 img_transform ::  #force_inline proc(img: Image) -> Image {
     @static IMG_DATA: [4000*4000]u32;
     data := IMG_DATA[:]
 
     width, height : i32 = img.width, img.height
+
+    min, max :u8= 255, 0
+    for j in 0..<height {
+        for i in 0..<width {
+            x,y: = i,j
+            color := rl.GetImageColor(img,x,y)
+            for val in color {
+                if val > max do max = val
+                if val < min do min = val
+
+            }
+
+            // data[j*width + i] = transmute(u32) color
+            data[j*width + i] = transmute(u32) transform(color)
+        }
+    }
+    fmt.printf("min=%v, max=%v\n", min, max)
+    // if true do panic("lol")
+
     for j in 0..<height {
         for i in 0..<width {
             x,y: = i,j
@@ -74,11 +143,11 @@ img_transform ::  #force_inline proc(img: Image) -> Image {
         }
     }
 
+
     img := img
     img.data = raw_data(data)
     img.mipmaps = 1
     img.format = rl.PixelFormat.UNCOMPRESSED_R8G8B8A8
-
     assert(img.height > 1 && img.width > 1)
     return img
 }
