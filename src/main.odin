@@ -1,21 +1,84 @@
 package pim
 
-main :: proc () {
-    rl.TraceLog(.INFO, 
-        fmt.ctprintf(
-            "Image Height =%v, Width=%v",
-            IMAGE_HEIGHT, IMAGE_WIDTH
-        )
-    )
-    assert(SCREEN_HEIGHT*SCREEN_WIDTH > 0)
-    assert(IMAGE_HEIGHT*IMAGE_WIDTH > 0)
-
-    loop();
-}
-
 Image    :: #type rl.Image
 Color    :: #type rl.Vector3
 Vector3  :: #type rl.Vector3
+
+Matrix :: struct {
+    data :[^]f32,
+    height, width: i32
+}
+
+convolve :: proc(image: Image, kernel: Matrix) -> Image {
+    using fmt
+    assert(kernel.height % 2 == 1)
+    assert(kernel.width % 2 == 1)
+    // Convolution operation
+    // Define your convolution kernel here
+
+    // Perform convolution
+    convolved := image
+    convolved.data = raw_data(make([]u8, 3*convolved.width*convolved.height))
+    ColorType::[3]u8
+    convolved.format = rl.PixelFormat.UNCOMPRESSED_R8G8B8
+    
+    for y in 0..<image.height {
+        for x in 0..<image.width {
+            sum :f32 = 0
+            fmt.println(x,y)
+            for j in 0..<kernel.height {
+                for i in 0..<kernel.width {
+                    i,j := i32(i), i32(j)
+                    i_offset := i-kernel.width/2
+                    j_offset := j-kernel.height/2
+                    img_color: rl.Color;
+                    // Check if the current pixel is within the image bounds
+                    if x + i_offset >= 0 && x + i_offset < image.width &&
+                       y + j_offset >= 0 && y + j_offset < image.height {
+                        img_color = rl.GetImageColor(image, x + i_offset, y + j_offset)
+                    } else {
+                        img_color = rl.Color{0, 0, 0, 255}
+                    }
+
+                    
+                    kernel_val := kernel.data[j*kernel.width + i]
+
+                    weight := kernel_val 
+                    if image.format == .UNCOMPRESSED_R8G8B8 {
+                        sum += f32(img_color.r+img_color.g + img_color.b + img_color.a)/4.0 * weight
+                    } else if image.format == .UNCOMPRESSED_R8G8B8A8 {
+                        sum += f32(img_color.r+img_color.g + img_color.b + img_color.a)/4.0 * weight
+                    } else {
+                        assert(image.format == .UNCOMPRESSED_GRAYSCALE)
+                        sum += f32(img_color.r)/1.0 * weight
+                    }
+
+                }
+            }
+            sum = la.clamp(sum, -255, 255)
+            // if sum > 255  {
+            //     // panic("sum is bigger than 255 that should not happen")
+            // }
+            // // rl.SetPixelColor(convolved.data, {0,0,0,24}, convolved.format)
+            println("sum = ", sum)
+            convolved_color := ColorType {
+                cast(u8)la.abs(sum),
+                cast(u8)la.abs(sum),
+                cast(u8)la.abs(sum),
+            } if sum > 0 else ColorType {
+                0,
+                0,
+                cast(u8)la.abs(sum),
+            } 
+            println(convolved_color)
+            (cast([^]ColorType)convolved.data)[y*convolved.width + x] = convolved_color
+            // rl.SetPixelColor(convolved.data, {200,200,200,200}, convolved.format)
+        }
+    }
+    fmt.println("finished convolving\n")
+    return convolved
+}
+
 
 transform :: proc(color: rl.Color) -> rl.Color {
     r, g, b, a := expand_values(color)
@@ -110,7 +173,43 @@ linear_by_parts :: proc(
 }
 
 
+
+kernel_xderivative :: [3][3]f32{
+    {-1, 0, 1},
+    {-2, 0, 2},
+    {-1, 0, 1},
+}
+
+kernel_yderivative :: [3][3]f32{
+    { 1,  2,  1},
+    { 0,  0,  0},
+    {-1, -2, -1},
+}
+
+
+kernel_median_blur :: [3][3]f32{
+    {1.0/9, 1.0/9, 1.0/9},
+    {1.0/9, 1.0/9, 1.0/9},
+    {1.0/9, 1.0/9, 1.0/9},
+}
+
+kernel_gaussion_blur :: [3][3]f32{}
+
+
 img_transform ::  #force_inline proc(img: Image) -> Image {
+
+    kernel_ptr := kernel_median_blur
+
+    kernel_width  :: 3
+    kernel_height :: 3
+    kernel :=  Matrix{
+        data=cast([^]f32)raw_data(kernel_ptr[:]),
+        width=kernel_width,
+        height=kernel_height,
+
+    }
+    if true do return convolve(img, kernel)
+
     @static IMG_DATA: [4000*4000]u32;
     data := IMG_DATA[:]
 
@@ -154,51 +253,16 @@ img_transform ::  #force_inline proc(img: Image) -> Image {
 
 
 
-loop :: proc() {
+main :: proc() {
+    orig := rl.LoadImage(IMG_FILE_PATH)
+    fmt.println("original", orig)
 
-    title :: proc () -> cstring {
-        return rl.TextFormat("FPS: %v\n", rl.GetFPS())
-    }
+    img  := img_transform(orig)
+    fmt.println("transformed", img)
 
-
-    rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, title=title());
-    rl.SetConfigFlags({.WINDOW_RESIZABLE})
-    rl.SetTargetFPS(60);
-
-
-
-    original_img := rl.LoadImage(IMG_FILE_PATH)
-    defer rl.UnloadImage(original_img)
-    original_texture := rl.LoadTextureFromImage(original_img);
-
-    img := img_transform(original_img)
-    texture := rl.LoadTextureFromImage(img);
-
-    fmt.print(img)
     rl.ExportImage(img, fmt.ctprintf("img.png"))
-    // if true do panic("lol")
+    fmt.println("Finished Exporting")
 
-    for !rl.WindowShouldClose() {
-        rl.SetWindowTitle(title())
-        rl.BeginDrawing();
-        rl.ClearBackground(rl.DARKBLUE);
-
-        img = img_transform(original_img)
-        rl.UpdateTexture(texture, img.data);
-        rl.DrawFPS(10, 10);
-
-        rl.DrawTexture(original_texture,  0,  SCREEN_HEIGHT / 2 - (img.height/2), rl.WHITE);
-        rl.DrawTexture(texture, SCREEN_WIDTH / 2 - (img.width/2) , SCREEN_HEIGHT / 2 - (img.height/2), rl.WHITE);
-
-        font_size : i32 = 20
-        rl.DrawText("Original Image", 0,  SCREEN_HEIGHT / 2 - (img.height/2),font_size, rl.BLACK);
-        rl.DrawText("Rendered Image", SCREEN_WIDTH / 2 - (img.width/2) , SCREEN_HEIGHT / 2 - (img.height/2), font_size, rl.BLACK);
-
-        
-        rl.EndDrawing();
-    }
-
-    rl.CloseWindow();
 }
 
 import os   "core:os"
