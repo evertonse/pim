@@ -14,6 +14,7 @@ run: clean all
 all:
 	mkdir -p $(DIR_BIN)/
 	odin build src -out:$(DIR_BIN)/$(PROJECT)
+  
 
 clean:
 	rm -f $(DIR_BIN)/*.bin

@@ -9,6 +9,63 @@ Matrix :: struct {
     height, width: i32
 }
 
+median :: proc(image: Image) -> Image {
+    using fmt
+    filter_size :i32 = 3
+
+    // Convolution operation
+    // Define your convolution kernel here
+
+    // Perform convolution
+    convolved := image
+    convolved.data = raw_data(make([]u8, 3*convolved.width*convolved.height))
+    Convolved_Color_Type::[3]u8
+    convolved.format = rl.PixelFormat.UNCOMPRESSED_R8G8B8
+    
+    for y in 0..<image.height {
+        for x in 0..<image.width {
+            colors :[dynamic]f32
+            fmt.println(x,y)
+            for j in 0..<filter_size {
+                for i in 0..<filter_size {
+                    i,j := i32(i), i32(j)
+                    i_offset := i-filter_size/2
+                    j_offset := j-filter_size/2
+                    img_color: rl.Color;
+                    // Check if the current pixel is within the image bounds
+                    if x + i_offset >= 0 && x + i_offset < image.width &&
+                       y + j_offset >= 0 && y + j_offset < image.height {
+                        img_color = rl.GetImageColor(image, x + i_offset, y + j_offset)
+                    } else {
+                        img_color = rl.Color{0, 0, 0, 255}
+                    }
+                    intesity: f32
+                    if image.format == .UNCOMPRESSED_R8G8B8 {
+                        intesity = f32(img_color.r+img_color.g + img_color.b)/3.0
+                    } else if image.format == .UNCOMPRESSED_R8G8B8A8 {
+                        intesity = f32(img_color.r+img_color.g + img_color.b + img_color.a)/4.0
+                    } else {
+                        assert(image.format == .UNCOMPRESSED_GRAYSCALE)
+                        intesity = f32(img_color.r)/1.0
+                    }
+                    append(&colors, intesity)
+                }
+            }
+            slice.sort(colors[:])
+
+            convolved_color := Convolved_Color_Type{
+                u8(colors[len(colors)/2]),
+                u8(colors[len(colors)/2]),
+                u8(colors[len(colors)/2]),
+
+            }
+            (cast([^]Convolved_Color_Type)convolved.data)[y*convolved.width + x] = convolved_color
+            // rl.SetPixelColor(convolved.data, {200,200,200,200}, convolved.format)
+        }
+    }
+    fmt.println("finished convolving\n")
+    return convolved
+}
 convolve :: proc(image: Image, kernel: Matrix) -> Image {
     using fmt
     assert(kernel.height % 2 == 1)
@@ -19,7 +76,7 @@ convolve :: proc(image: Image, kernel: Matrix) -> Image {
     // Perform convolution
     convolved := image
     convolved.data = raw_data(make([]u8, 3*convolved.width*convolved.height))
-    ColorType::[3]u8
+    Convolved_Color_Type::[3]u8
     convolved.format = rl.PixelFormat.UNCOMPRESSED_R8G8B8
     
     for y in 0..<image.height {
@@ -39,13 +96,9 @@ convolve :: proc(image: Image, kernel: Matrix) -> Image {
                     } else {
                         img_color = rl.Color{0, 0, 0, 255}
                     }
-
-                    
-                    kernel_val := kernel.data[j*kernel.width + i]
-
-                    weight := kernel_val 
+                    weight := kernel.data[j*kernel.width + i]
                     if image.format == .UNCOMPRESSED_R8G8B8 {
-                        sum += f32(img_color.r+img_color.g + img_color.b + img_color.a)/4.0 * weight
+                        sum += f32(img_color.r+img_color.g + img_color.b)/3.0 * weight
                     } else if image.format == .UNCOMPRESSED_R8G8B8A8 {
                         sum += f32(img_color.r+img_color.g + img_color.b + img_color.a)/4.0 * weight
                     } else {
@@ -61,17 +114,17 @@ convolve :: proc(image: Image, kernel: Matrix) -> Image {
             // }
             // // rl.SetPixelColor(convolved.data, {0,0,0,24}, convolved.format)
             println("sum = ", sum)
-            convolved_color := ColorType {
+            convolved_color := Convolved_Color_Type {
                 cast(u8)la.abs(sum),
                 cast(u8)la.abs(sum),
                 cast(u8)la.abs(sum),
-            } if sum > 0 else ColorType {
+            } if sum > 0 else Convolved_Color_Type {
+                cast(u8)la.abs(sum),
                 0,
                 0,
-                cast(u8)la.abs(sum),
             } 
             println(convolved_color)
-            (cast([^]ColorType)convolved.data)[y*convolved.width + x] = convolved_color
+            (cast([^]Convolved_Color_Type)convolved.data)[y*convolved.width + x] = convolved_color
             // rl.SetPixelColor(convolved.data, {200,200,200,200}, convolved.format)
         }
     }
@@ -187,28 +240,52 @@ kernel_yderivative :: [3][3]f32{
 }
 
 
-kernel_median_blur :: [3][3]f32{
+
+kernel_mean_blur :: [3][3]f32{
     {1.0/9, 1.0/9, 1.0/9},
     {1.0/9, 1.0/9, 1.0/9},
     {1.0/9, 1.0/9, 1.0/9},
 }
 
-kernel_gaussion_blur :: [3][3]f32{}
+kernel_gaussion_blur_data := [3][3]f32{
+    { 1.0/16,  2.0/16,  1.0/16},
+    { 2.0/16,  4.0/16,  2.0/16},
+    { 1.0/16,  2.0/16,  1.0/16},
+}
+kernel_gaussion_blur  :=  Matrix{
+    data=cast([^]f32)raw_data(kernel_gaussion_blur_data[:]),
+    width=3,
+    height=3,
+}
+
+
+
+kernel_laplacian_data := [3][3]f32{
+    { 0,  1,  0},
+    { 1, -4,  1},
+    { 0,  1,  0},
+}
+kernel_laplacian :=  Matrix{
+    data=cast([^]f32)raw_data(kernel_laplacian_data[:]),
+    width=3,
+    height=3,
+}
 
 
 img_transform ::  #force_inline proc(img: Image) -> Image {
+    img := img
 
-    kernel_ptr := kernel_median_blur
 
     kernel_width  :: 3
     kernel_height :: 3
-    kernel :=  Matrix{
-        data=cast([^]f32)raw_data(kernel_ptr[:]),
-        width=kernel_width,
-        height=kernel_height,
 
-    }
-    if true do return convolve(img, kernel)
+    if true {
+        // img = convolve(img, kernel_gaussion_blur)
+        img = median(img)
+        // img = convolve(img, kernel_laplacian)
+
+        return img
+    } 
 
     @static IMG_DATA: [4000*4000]u32;
     data := IMG_DATA[:]
@@ -243,7 +320,6 @@ img_transform ::  #force_inline proc(img: Image) -> Image {
     }
 
 
-    img := img
     img.data = raw_data(data)
     img.mipmaps = 1
     img.format = rl.PixelFormat.UNCOMPRESSED_R8G8B8A8
@@ -255,6 +331,8 @@ img_transform ::  #force_inline proc(img: Image) -> Image {
 
 main :: proc() {
     orig := rl.LoadImage(IMG_FILE_PATH)
+    rl.ImageColorGrayscale(&orig);
+
     fmt.println("original", orig)
 
     img  := img_transform(orig)
@@ -274,3 +352,5 @@ import math "core:math"
 import rand "core:math/rand"
 
 import rl "vendor:raylib"
+import "core:sort"
+import "core:slice"

@@ -27,13 +27,16 @@ kernel = np.array([
     [1, 2, 1], 
 ], dtype='float64')
 
+print(np.sum(kernel))
+
 kernel /= np.sum(kernel)
 
 print(np.sum(kernel))
 
 
 # Load the input image
-image = cv2.imread('./assets/images/lua.png')
+# image = cv2.imread('./assets/images/lua.png')
+image = cv2.imread('./assets/images/salted_1.png')
 
 # Convert the image to grayscale
 gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
