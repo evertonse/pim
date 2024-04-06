@@ -27,10 +27,10 @@ matrix_to_image :: proc(
     mat: Matrix,
     color := proc(intensity : f32) -> u32 { 
         c := u8(la.clamp(intensity, 0.0, 255.0))
-        return  u32(c << 8*3 | c << 8*2 | c << 8| 255);
+        return u32(c << 24 | c << 16 | c << 8  | 0xff)
     }
 ) -> Image {
-    img := Image{data = mat.data, height=mat.height, width=mat.width, format=rl.PixelFormat.UNCOMPRESSED_R8G8B8A8 }
+    img := Image{data = mat.data, height=mat.height, width=mat.width, format=rl.PixelFormat.UNCOMPRESSED_R8G8B8A8, mipmaps=1}
     for y in 0..<mat.height {
         for x in 0..<mat.width {
             intensity := get(mat, x,y) 
@@ -271,7 +271,6 @@ img_transform ::  #force_inline proc(image: Image) -> Image {
     image := image
     rl.ImageColorGrayscale(&image)
     img := image_to_matrix(image)
-    if true do return matrix_to_image(img)
 
     kernel_width  :: 3
     kernel_height :: 3
@@ -280,11 +279,11 @@ img_transform ::  #force_inline proc(image: Image) -> Image {
     when !POINT_MODE {
         // img = convolve(img, kernel_gaussion_blur)
         // img = median(img)
-        img = laplacian_sharp(img)
+        // img = laplacian_sharp(img)
         // img = convolve(img, kernel_laplacian)
-        image = matrix_to_image(img)
 
-        return image 
+        fmt.println("return from img_transform")
+        return matrix_to_image(img)
     } 
     
 
@@ -375,7 +374,7 @@ main :: proc() {
     img  := img_transform(orig)
     fmt.println("transformed", img)
 
-    rl.ExportImage(img, fmt.ctprintf("img.png"))
+    rl.ExportImage(img, fmt.ctprintf("transformed.png"))
     fmt.println("Finished Exporting")
 
 }
