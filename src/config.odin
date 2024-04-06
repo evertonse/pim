@@ -16,9 +16,12 @@ GAMMA :: 2
 
 // IMG_FILE_PATH :: "./assets/images/porto.png"
 // IMG_FILE_PATH :: "./assets/images/lua.png"
-IMG_FILE_PATH :: "./assets/images/salted_1.png"
+// IMG_FILE_PATH :: "./assets/images/salted_1.png"
+IMG_FILE_PATH :: "./assets/images/lua.png"
 // IMG_FILE_PATH :: "./assets/images/beans.png"
 
 import math "core:math"
 
+// POINT_MODE :: true
+POINT_MODE :: false
 
