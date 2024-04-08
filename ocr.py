@@ -3,7 +3,9 @@ import pytesseract
 import numpy as np
 
 # image = cv2.imread('./assets/ocr/lorem_s12_c03.pbm')
-orig = cv2.imread('./assets/ocr/lorem_s12_c02_noise.pbm')
+# orig = cv2.imread("./assets/ocr/lorem_s12_c02_noise.pbm")
+orig = cv2.imread("./assets/ocr/extra/lorem_s16_c02.png")
+print(f"{orig.shape}")
 
 # Convert the image to grayscale
 image = cv2.cvtColor(orig, cv2.COLOR_BGR2GRAY)
@@ -11,75 +13,140 @@ image = cv2.cvtColor(orig, cv2.COLOR_BGR2GRAY)
 image = cv2.medianBlur(image, 3)
 _, image = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
+
 def hit_or_miss(binary_image, structuring_element=None):
     # Define the default structuring element if not provided
     if structuring_element is None:
-        structuring_element = np.array([
-            [0, 1, 1, 1, 0],
-            [1, 1, 1, 1, 1],
-            [1, 1, 1, 1, 1],
-            [1, 1, 1, 1, 1],
-            [0, 1, 1, 1, 0]
-        ], dtype=np.uint8)
-    
+        structuring_element = np.array(
+            [
+                [0, 0, 1, 0, 0],
+                [1, 1, 1, 1, 1],
+                [1, 1, 1, 1, 1],
+                [1, 1, 1, 1, 1],
+                [0, 1, 1, 1, 0],
+            ],
+            dtype=np.uint8,
+        )
+        structuring_element = np.array(
+            [
+                [0, 0, 0, 1, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1, 1],
+                [0, 1, 1, 1, 1, 1, 0],
+            ],
+            dtype=np.uint8,
+        )
+
     # Invert the binary image
     inverted_image = cv2.bitwise_not(binary_image)
-    
+    cv2.imwrite("./output/inverted_image.png", inverted_image)
+
     # Perform erosion with the structuring element
-    erosion = cv2.erode(inverted_image, structuring_element)
-    
+    erosion = cv2.erode(inverted_image, structuring_element, iterations=1)
+    cv2.imwrite("./output/inverted_eroded.png", erosion)
+
     # Invert the result to get the hit-or-miss operation
     result = cv2.bitwise_not(erosion)
-    
+    cv2.imwrite("./output/result.png", result)
+
     return result
+
 
 # Define a kernel for morphological operations
 def create_text_kernel(size):
     # Create a kernel with vertical and horizontal lines
     kernel = np.zeros((size, size), dtype=np.uint8)
-    
+
     # Add vertical line in the center
     kernel[:, size // 2] = 1
-    
+
     # Add horizontal line in the center
     kernel[size // 2, :] = 1
     # kernel = np.ones((7, 7), np.uint8)
     return kernel
+
 
 def create_circular_kernel(radius):
     size = radius
     kernel = np.zeros((size, size), dtype=np.uint8)
     for y in range(size):
         for x in range(size):
-            if x*x + y*y <= radius*radius:
+            if x * x + y * y <= radius * radius:
                 kernel[x][y] = 1
-    
+
     return kernel
 
-kernel = create_text_kernel(7)
-kernel = create_circular_kernel(7)
 
-cv2.imwrite('text_kernel.png', kernel)
+kernel = create_circular_kernel(7)
+kernel = create_text_kernel(9)
+# kernel = np.array([
+#     [0, 0, 0, 1, 0, 0, 0],
+#     [0, 0, 0, 1, 0, 0, 0],
+#     [0, 0, 1, 1, 1, 0, 0],
+#     [1, 1, 1, 1, 1, 1, 1],
+#     [0, 1, 1, 1, 1, 1, 0],
+#     [0, 0, 1, 1, 1, 0, 0],
+#     [0, 0, 0, 1, 0, 0, 0],
+#     [0, 0, 0, 1, 0, 0, 0]],dtype=np.uint8)
+
+cv2.imwrite("./output/text_kernel.png", kernel)
+
+
+def bbox_area(bbox):
+    x1, y1, x2, y2 = bbox
+    width = abs(x2 - x1)
+    height = abs(y2 - y1)
+    area = width * height
+    return area
+
 
 
 # Morphological operations: dilation and erosion
-image  = cv2.dilate(image, kernel, iterations=1)
-image  = cv2.erode(image, kernel, iterations=1)
 
-image  = cv2.dilate(image, kernel, iterations=1)
-image  = cv2.erode(image, kernel, iterations=1)
+openings = 2
+for idx in range(openings):
+    image = cv2.dilate(image, kernel, iterations=1)
+    image = cv2.erode(image, kernel, iterations=1)
+    cv2.imwrite(f"./output/openings{idx}.png", image)
 
-image  = cv2.dilate(image, kernel, iterations=1)
-image  = cv2.erode(image, kernel, iterations=1)
 
-cv2.imwrite('morphological.png', image)
+
+image = cv2.dilate(
+    image,
+    kernel,
+    iterations=1,
+)
+
+
+kernel = np.array(
+        [
+            [0, 0, 1, 0, 0],
+            [1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1],
+            [0, 0, 1, 0, 0],
+        ],
+        dtype=np.uint8,)
+
+closings = 2
+for idx in range(closings):
+    prev = image
+    image = cv2.erode(image, kernel, iterations=1)
+    image = cv2.dilate(image, kernel, iterations=1)
+    cv2.imwrite(f"./output/closing{idx}.png", image)
+
+cv2.imwrite("./output/morphological.png", image)
 
 image = hit_or_miss(image)
-cv2.imwrite('hit_or_miss.png', image)
+cv2.imwrite("./output/hit_or_miss.png", image)
 
 finished_image = image
 
-cv2.imwrite('finished.png', finished_image)
+cv2.imwrite("./output/finished.png", finished_image)
+
 
 def find_median_height(bboxes):
     # List to store heights of bounding boxes
@@ -88,9 +155,9 @@ def find_median_height(bboxes):
     # Iterate over all bounding boxes
     for bbox in bboxes:
         # Extract ymin and ymax from each bounding box
-        _, min_y, _, max_y = bbox
+        min_x, min_y, max_x, max_y = bbox
         # Calculate height and append to the list
-        height = max_y - min_y
+        height = abs(max_x - min_x)
         heights.append(height)
 
     # Sort the list of heights
@@ -99,20 +166,28 @@ def find_median_height(bboxes):
     # Calculate the median height
     if len(heights) % 2 == 0:
         # If number of heights is even, take average of middle two heights
-        median_height = (heights[len(heights)//2 - 1] + heights[len(heights)//2]) / 2
+        median_height = (
+            heights[len(heights) // 2 - 1] + heights[len(heights) // 2]
+        ) / 2
     else:
         # If number of heights is odd, take the middle height
-        median_height = heights[len(heights)//2]
+        median_height = heights[len(heights) // 2]
 
     return median_height
 
-def find_connected_components_bbox(image):
+
+def find_connected_components_bbox(image, min_area=0):
     def dfs(x, y):
         min_x, min_y, max_x, max_y = x, y, x, y
         stack = [(x, y)]
         while stack != []:
             cx, cy = stack.pop()
-            if 0 <= cx < image.shape[0] and 0 <= cy < image.shape[1] and not visited[cx, cy] and image[cx, cy] == 255:
+            if (
+                0 <= cx < image.shape[0]
+                and 0 <= cy < image.shape[1]
+                and not visited[cx, cy]
+                and image[cx, cy] == 255
+            ):
                 visited[cx, cy] = True
                 min_x = min(min_x, cx)
                 min_y = min(min_y, cy)
@@ -132,29 +207,161 @@ def find_connected_components_bbox(image):
                 bounding_boxes.append((min_x, min_y, max_x, max_y))
 
     return bounding_boxes
+
+
 using_cv = False
 if using_cv:
     # Connected component analysis (CCA)
     _, labels, stats, centroids = cv2.connectedComponentsWithStats(finished_image)
     for i in range(1, len(stats)):
         x, y, w, h, area = stats[i]
-        if area > 10*10:
+        if area > 10 * 10:
             cv2.rectangle(orig, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
 
 bboxes = find_connected_components_bbox(finished_image)
 median_height = find_median_height(bboxes)
-min_area = median_height*median_height
+min_area = (median_height * median_height) / (2.5)
+bboxes = list(filter(lambda x: bbox_area(x) > min_area, bboxes))
+print(f"{min_area, median_height=}")
+words = 0
 for bbox in bboxes:
     min_x, min_y, max_x, max_y = bbox
+    area = bbox_area(bbox)
+    words += 1
     cv2.rectangle(orig, (min_y, min_x), (max_y, max_x), (0, 0, 255), 2)
 
 
+def count_lines(bboxes):
+    global orig
+    if len(bboxes) == 0:
+        return 0
 
-# print(labels, stats, centroids)
-# _, labels, stats, centroids = connectedComponentsWithStats(eroded_image)
+    bboxes = sorted(bboxes, key=lambda bbox: (bbox[0], bbox[2]))
+    video_writer = cv2.VideoWriter(
+        "./output/video.avi",
+        cv2.VideoWriter_fourcc(*"XVID"),
+        30,
+        (orig.shape[1], orig.shape[0]),
+    )
+
+    lines = 1
+    prev1, _, prev2, _ = bboxes[0]
+    # Iterate through the sorted bounding boxes starting from the second one
+    xdiffs_bboxes = []
+    for bbox in bboxes[1:]:
+        y1, _, y2, _ = bbox
+        overlap = max(0, min(prev2, y2) - max(prev1, y1))
+        # print(f"{overlap=}")
+        if overlap > abs(prev1 - prev2) / 100:
+            continue
+        lines += 1
+        prev1 = y1
+        prev2 = y2
+
+        vis_img = orig.copy()
+        cv2.rectangle(vis_img, (0, y1), (orig.shape[0] - 1, y2), (255, 0, 0), 2)
+        video_writer.write(vis_img)
+
+    video_writer.release()
+    return lines
 
 
-# Iterate through the detected components (excluding background)
 
-# Display the result
-cv2.imwrite('detected.png', orig)
+
+def distance(bbox1, bbox2):
+    import math
+
+def distance(bbox1, bbox2):
+    """
+    Calculate the distance between the closest edges of two bounding boxes.
+    """
+    left1, top1, right1, bottom1 = bbox1
+    left2, top2, right2, bottom2 = bbox2
+
+    # Initialize the minimum distance with a large value
+    min_distance = float('inf')
+
+    for x1, y1 in [(left1, top1), (right1, top1), (right1, bottom1), (left1, bottom1)]:
+        for x2, y2 in [(left2, top2), (right2, top2), (right2, bottom2), (left2, bottom2)]:
+            dist = np.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+            if dist < min_distance:
+                min_distance = dist
+
+    return min_distance
+
+# Example usage:
+bbox1 = (10, 10, 50, 50)
+bbox2 = (60, 60, 100, 100)
+print(distance(bbox1, bbox2))
+
+
+
+def bbox_overlap(bbox1, bbox2):
+    """
+    Check if two bounding boxes overlap.
+    """
+    left1, top1, right1, bottom1 = bbox1
+    left2, top2, right2, bottom2 = bbox2
+    
+    return not (right1 < left2 or right2 < left1 or bottom1 < top2 or bottom2 < top1)
+
+
+def group_bboxes(bboxes, max_distance) -> list[list]:
+    result = []
+    rest_idxs  = [i for i in range(len(bboxes))]
+    while len(rest_idxs) > 0:
+        close_idxs = [rest_idxs.pop()]
+        bbox = bboxes[close_idxs[0]]
+        counter = 0
+        while counter < len(rest_idxs):
+            r_idx = rest_idxs[counter]
+            counter += 1
+            dist = distance(bbox, bboxes[r_idx])
+            if dist <= max_distance or bbox_overlap(bbox, bboxes[r_idx]):
+                close_idxs.append(r_idx)
+                rest_idxs.remove(r_idx)
+                bbox = enclosing_bbox([bbox, bboxes[r_idx]])
+                counter = 0
+        result.append([bboxes[i] for i in close_idxs])
+    return result
+
+def distance_bboxes_matrix(bboxes):
+    """
+    Compute a matrix of distances between a given bounding box and every other bounding box.
+    """
+    num_bboxes = len(bboxes)
+    distances = [[-1 for _ in range(num_bboxes)] for _ in range(num_bboxes)]
+
+    # Compute distances between the given bbox and every other bbox
+    for i in range(num_bboxes):
+        for j in range(num_bboxes):
+            distances[i][j] = distance(bboxes[i], bboxes[j])
+    return distances
+
+def enclosing_bbox(bboxes):
+    if not bboxes:
+        return None
+
+    # Initialize min and max coordinates with the first bounding box
+    x_min, y_min, x_max, y_max = bboxes[0]
+
+    # Iterate through the rest of the bounding boxes to update min and max coordinates
+    for bbox in bboxes[1:]:
+        x_min = min(x_min, bbox[0])
+        y_min = min(y_min, bbox[1])
+        x_max = max(x_max, bbox[2])
+        y_max = max(y_max, bbox[3])
+
+    # Return the enclosing bounding box
+    return (x_min, y_min, x_max, y_max)
+
+
+list_of_bboxes = group_bboxes(bboxes, max_distance=median_height/1.5)
+for bbxs in list_of_bboxes:
+    x, y, x2, y2 = enclosing_bbox(bbxs)
+    print(f'{bbxs=}')
+    cv2.rectangle(orig, (y, x), (y2, x2), (0, 244, 55), 4)
+
+print(f"# {words} words, {count_lines(bboxes)} lines, {len(list_of_bboxes)} blocks.")
+cv2.imwrite("./output/detected.png", orig)
