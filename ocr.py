@@ -1,17 +1,30 @@
 import cv2
+import os
 import pytesseract
+import random
 import numpy as np
 
 # orig = cv2.imread("./assets/ocr/lorem_s12_c02_noise.pbm") # 583 words, 52 lines, 2 columns, 7 blocks.
 # orig = cv2.imread("./assets/ocr/extra/lorem_s16_c02.png") # 318 words, 39 lines, 2 columns, 4 blocks.
 # orig = cv2.imread('./assets/ocr/lorem_s12_c03.pbm') # 557 words, 52 lines, 3 columns, 8 blocks.
 #(exibits wrong blocks because of heights) orig = cv2.imread("./assets/ocr/lorem_s12_c03_just.pbm")  # 557 words, 52 lines, 3 columns, 8 blocks.
-# Needs fixing orig = cv2.imread("./assets/ocr/extra/cascadia_code_s16_c02_center.png")
-orig = cv2.imread("./assets/ocr/extra/cascadia_code_s10_c02_right_bold.png") # 391 words, 42 lines, 2 columns, 5 blocks.
 # orig = cv2.imread("./assets/ocr/extra/arial_s14_c04_left.png")
+# Needs fixing orig = cv2.imread("./assets/ocr/extra/cascadia_code_s16_c02_center.png")
+# orig = cv2.imread("./assets/ocr/extra/cascadia_code_s10_c02_right_bold.png") # 395 words, 42 lines, 2 columns, 5 blocks.
+orig = cv2.imread("./assets/ocr/extra/cascadia_code_s10_c02_right_bold.pbm") # 395 words, 42 lines, 2 columns, 5 blocks.
+
+def noisify(image):
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    noisy_image = image
+    for i in range(noisy_image.shape[0]):
+        for j in range(noisy_image.shape[1]):
+            # Generate a random value between -1 and 1
+            noise = random.uniform(0, 1)
+            if noise > 0.95: 
+                noisy_image[i, j] = 0
+    return noisy_image
+
 print(f"{orig.shape=}")
-
-
 def im_open(image, kernel, iterations=1):
     for _ in range(iterations):
         image = cv2.erode(image, kernel,  iterations=1)
@@ -31,8 +44,11 @@ image = cv2.cvtColor(orig, cv2.COLOR_BGR2GRAY)
 cv2.imwrite(f"./output/orig.png", image)
 
 # Small resolution, ain't worth it
-if image.shape[0] * image.shape[1] > 1124 * 795:
+if True or image.shape[0] * image.shape[1] > 1124 * 795:
     image = cv2.medianBlur(image, 3)
+else:
+    image = cv2.erode(image,  np.array([1,1,1]),  iterations=1)
+    image = cv2.dilate(image, np.array([1,1,1]), iterations=1)
 
 cv2.imwrite(f"./output/noise_free.png", image)
 
@@ -263,8 +279,42 @@ finished_image = image
 
 cv2.imwrite("./output/finished.png", finished_image)
 
-
 def find_median_height(bboxes):
+    # List to store heights of bounding boxes
+    heights = []
+
+    # Iterate over all bounding boxes
+    for bbox in bboxes:
+        # Extract ymin and ymax from each bounding box
+        min_x, min_y, max_x, max_y = bbox
+        # Calculate height and append to the list
+        height = abs(max_x - min_x)
+        heights.append(height)
+
+    # Calculate the median height
+    heights.sort()
+    median_height = heights[len(heights) // 2]
+    print(f'{heights=}')
+
+    # Filter out outliers
+    filtered_heights = []
+    for height in heights:
+        dh = abs(height - median_height)
+        if dh < 0.5*median_height:
+            filtered_heights.append(height)
+    filtered_heights.sort()
+    print(f'{filtered_heights=}')
+
+    if len(filtered_heights) % 2 == 0:
+        median_height = (filtered_heights[len(filtered_heights) // 2 - 1] + filtered_heights[len(filtered_heights) // 2]) / 2
+    else:
+        median_height = filtered_heights[len(filtered_heights) // 2]
+    mean_height = sum(filtered_heights) / len(filtered_heights)
+    print(f'{mean_height=}')
+    return median_height
+
+
+def _find_median_height(bboxes):
     # List to store heights of bounding boxes
     heights = []
 
@@ -294,6 +344,10 @@ def find_median_height(bboxes):
 
 def find_connected_components_bbox(image, min_area=0, connectivity=4):
     def dfs(x, y):
+        nbrs = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+        if connectivity == 8:
+            nbrs.extend([( 1, 1), ( 1,-1), (-1, 1), (-1,-1)]) 
+
         min_x, min_y, max_x, max_y = x, y, x, y
         stack = [(x, y)]
         while stack != []:
@@ -309,12 +363,7 @@ def find_connected_components_bbox(image, min_area=0, connectivity=4):
                 min_y = min(min_y, cy)
                 max_x = max(max_x, cx)
                 max_y = max(max_y, cy)
-                nbrs = [(1, 0), (-1, 0), (0, 1), (0, -1)]
-                if connectivity == 8:
-                    nbrs.append(( 1, 1))
-                    nbrs.append(( 1,-1))
-                    nbrs.append((-1, 1))
-                    nbrs.append((-1,-1))
+                
                 for dx, dy in nbrs:
                     stack.append((cx + dx, cy + dy))
         return min_x, min_y, max_x, max_y
