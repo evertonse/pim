@@ -1,33 +1,30 @@
 import cv2
 import os
-import pytesseract
 import random
 import numpy as np
+from kernels import *
 
-# orig = cv2.imread("./assets/ocr/lorem_s12_c02_noise.pbm") # 583 words, 52 lines, 2 columns, 7 blocks.
-# orig = cv2.imread("./assets/ocr/extra/lorem_s16_c02.png") # 318 words, 39 lines, 2 columns, 4 blocks.
-# orig = cv2.imread('./assets/ocr/lorem_s12_c03.pbm') # 557 words, 52 lines, 3 columns, 8 blocks.
-#(exibits wrong blocks because of heights) orig = cv2.imread("./assets/ocr/lorem_s12_c03_just.pbm")  # 557 words, 52 lines, 3 columns, 8 blocks.
-# orig = cv2.imread("./assets/ocr/extra/arial_s14_c04_left.png")
-# Needs fixing orig = cv2.imread("./assets/ocr/extra/cascadia_code_s16_c02_center.png")
-# orig = cv2.imread("./assets/ocr/extra/cascadia_code_s10_c02_right_bold.png") # 395 words, 42 lines, 2 columns, 5 blocks.
-orig = cv2.imread("./assets/ocr/extra/cascadia_code_s10_c02_right_bold.pbm") # 395 words, 42 lines, 2 columns, 5 blocks.
+
+def pbm(image):
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    _, image = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    return image
+
 
 def noisify(image):
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    noisy_image = image
+    noisy_image = image.copy()
     for i in range(noisy_image.shape[0]):
         for j in range(noisy_image.shape[1]):
             # Generate a random value between -1 and 1
             noise = random.uniform(0, 1)
-            if noise > 0.95: 
+            if noise > 0.95:
                 noisy_image[i, j] = 0
     return noisy_image
 
-print(f"{orig.shape=}")
+
 def im_open(image, kernel, iterations=1):
     for _ in range(iterations):
-        image = cv2.erode(image, kernel,  iterations=1)
+        image = cv2.erode(image, kernel, iterations=1)
         image = cv2.dilate(image, kernel, iterations=1)
     return image
 
@@ -35,36 +32,10 @@ def im_open(image, kernel, iterations=1):
 def im_close(image, kernel, iterations=1):
     for _ in range(iterations):
         image = cv2.dilate(image, kernel, iterations=1)
-        image = cv2.erode(image, kernel,  iterations=1)
+        image = cv2.erode(image, kernel, iterations=1)
     return image
 
 
-# Convert the image to grayscale
-image = cv2.cvtColor(orig, cv2.COLOR_BGR2GRAY)
-cv2.imwrite(f"./output/orig.png", image)
-
-# Small resolution, ain't worth it
-if True or image.shape[0] * image.shape[1] > 1124 * 795:
-    image = cv2.medianBlur(image, 3)
-else:
-    image = cv2.erode(image,  np.array([1,1,1]),  iterations=1)
-    image = cv2.dilate(image, np.array([1,1,1]), iterations=1)
-
-cv2.imwrite(f"./output/noise_free.png", image)
-
-
-kernel_block_3x3 = np.array(
-    [
-        [0, 1, 0],
-        [1, 1, 1],
-        [0, 1, 0],
-    ],
-    dtype=np.uint8,
-)
-
-
-_, image = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-cv2.imwrite(f"./output/threshold.png", image)
 
 
 
@@ -109,117 +80,6 @@ def hit_or_miss(binary_image, structuring_element=None):
     return result
 
 
-# Define a kernel for morphological operations
-def create_text_kernel(size):
-    # Create a kernel with vertical and horizontal lines
-    kernel = np.zeros((size, size), dtype=np.uint8)
-
-    # Add vertical line in the center
-    kernel[:, size // 2] = 1
-
-    # Add horizontal line in the center
-    kernel[size // 2, :] = 1
-    # kernel = np.ones((7, 7), np.uint8)
-    return kernel
-
-
-def create_circular_kernel(radius):
-    size = radius
-    kernel = np.zeros((size, size), dtype=np.uint8)
-    for y in range(size):
-        for x in range(size):
-            if x * x + y * y < radius * radius:
-                kernel[x][y] = 1
-
-    return kernel
-
-
-horz_kernel_3x3 = np.array([[0, 1, 0], [1, 1, 1], [0, 0, 0]], dtype=np.uint8)
-
-horz_kernel_5x5 = np.array(
-    [
-        [0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 1],
-        [0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0],
-    ],
-    dtype=np.uint8,
-)
-
-horz_kernel_5x5_truncated = np.array(
-    [
-        [0, 0, 0, 0, 0],
-        [0, 0, 1, 0, 0],
-        [0, 1, 1, 1, 1],
-        [0, 0, 1, 0, 0],
-        [0, 0, 0, 0, 0],
-    ],
-    dtype=np.uint8,
-)
-
-horz_kernel_3x3 = np.array(
-    [
-        [0,  0,  0],
-        [1,  1,  1],
-        [0,  0,  0],
-    ],
-    dtype=np.uint8,
-)
-
-horz_kernel_7x7 = np.array(
-    [
-        [0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 1, 1, 0, 0],
-        [1, 1, 1, 1, 1, 1, 1],
-        [0, 0, 0, 1, 1, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0],
-    ],
-    dtype=np.uint8,
-)
-
-
-horz_kernel_9x9 = np.array(
-    [
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 1, 1, 1, 0, 0, 0],
-        [0, 0, 1, 1, 1, 1, 1, 1, 0],
-        [0, 0, 1, 0, 1, 1, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    ],
-    dtype=np.uint8,
-)
-
-vert_kernel_5x5 = np.array(
-    [
-        [0, 0, 0, 0, 0],
-        [0, 0, 1, 0, 0],
-        [0, 0, 1, 0, 0],
-        [0, 0, 1, 0, 0],
-        [0, 0, 0, 0, 0],
-    ],
-    dtype=np.uint8,
-)
-
-vert_kernel_7x7 = np.array(
-    [
-        [0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 1, 0, 0, 0],
-        [0, 0, 0, 1, 0, 0, 0],
-        [0, 0, 1, 1, 1, 0, 0],
-        [0, 0, 0, 1, 0, 0, 0],
-        [0, 0, 0, 1, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0],
-    ],
-    dtype=np.uint8,
-)
-
 
 def bbox_area(bbox):
     x1, y1, x2, y2 = bbox
@@ -229,57 +89,9 @@ def bbox_area(bbox):
     return area
 
 
-# Morphological operations
 
 
-
-image = cv2.dilate(image, horz_kernel_5x5_truncated, iterations=2)
-cv2.imwrite(f"./output/dilate.png", image)
-
-# image = cv2.erode(image, horz_kernel_3x3, iterations=1)
-# cv2.imwrite(f"./output/erode.png", image)
-
-kernel = create_text_kernel(5)
-kernel = create_circular_kernel(3)
-kernel = horz_kernel_3x3
-print(f"{kernel=}")
-
-image = im_close(image, kernel)
-image = im_open(image, kernel)
-cv2.imwrite("./output/open.png", image)
-image = im_close(image, kernel)
-cv2.imwrite(f"./output/close.png", image)
-
-
-
-
-block_kernel = np.array(
-    [
-        [0, 1, 1, 1, 0],
-        [1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1],
-        [0, 1, 1, 1, 0],
-    ],
-    dtype=np.uint8,
-)
-
-image = cv2.dilate(
-    image,
-    block_kernel,
-    iterations=0,
-)
-
-
-
-# image = hit_or_miss(image)
-# cv2.imwrite("./output/hit_or_miss.png", image)
-
-finished_image = image
-
-cv2.imwrite("./output/finished.png", finished_image)
-
-def find_median_height(bboxes):
+def choose_best_height(bboxes):
     # List to store heights of bounding boxes
     heights = []
 
@@ -294,51 +106,27 @@ def find_median_height(bboxes):
     # Calculate the median height
     heights.sort()
     median_height = heights[len(heights) // 2]
-    print(f'{heights=}')
+    print(f"{heights=}")
 
     # Filter out outliers
     filtered_heights = []
     for height in heights:
         dh = abs(height - median_height)
-        if dh < 0.5*median_height:
+        if dh < 0.5 * median_height:
             filtered_heights.append(height)
     filtered_heights.sort()
-    print(f'{filtered_heights=}')
+    print(f"{filtered_heights=}")
 
     if len(filtered_heights) % 2 == 0:
-        median_height = (filtered_heights[len(filtered_heights) // 2 - 1] + filtered_heights[len(filtered_heights) // 2]) / 2
+        median_height = (
+            filtered_heights[len(filtered_heights) // 2 - 1]
+            + filtered_heights[len(filtered_heights) // 2]
+        ) / 2
     else:
         median_height = filtered_heights[len(filtered_heights) // 2]
     mean_height = sum(filtered_heights) / len(filtered_heights)
-    print(f'{mean_height=}')
-    return median_height
-
-
-def _find_median_height(bboxes):
-    # List to store heights of bounding boxes
-    heights = []
-
-    # Iterate over all bounding boxes
-    for bbox in bboxes:
-        # Extract ymin and ymax from each bounding box
-        min_x, min_y, max_x, max_y = bbox
-        # Calculate height and append to the list
-        height = abs(max_x - min_x)
-        heights.append(height)
-
-    # Sort the list of heights
-    heights.sort()
-
-    # Calculate the median height
-    if len(heights) % 2 == 0:
-        # If number of heights is even, take average of middle two heights
-        median_height = (
-            heights[len(heights) // 2 - 1] + heights[len(heights) // 2]
-        ) / 2
-    else:
-        # If number of heights is odd, take the middle height
-        median_height = heights[len(heights) // 2]
-
+    print(f"{mean_height=}")
+    return max(median_height, filtered_heights[-1] / 2, round(mean_height))
     return median_height
 
 
@@ -346,7 +134,7 @@ def find_connected_components_bbox(image, min_area=0, connectivity=4):
     def dfs(x, y):
         nbrs = [(1, 0), (-1, 0), (0, 1), (0, -1)]
         if connectivity == 8:
-            nbrs.extend([( 1, 1), ( 1,-1), (-1, 1), (-1,-1)]) 
+            nbrs.extend([(1, 1), (1, -1), (-1, 1), (-1, -1)])
 
         min_x, min_y, max_x, max_y = x, y, x, y
         stack = [(x, y)]
@@ -363,7 +151,7 @@ def find_connected_components_bbox(image, min_area=0, connectivity=4):
                 min_y = min(min_y, cy)
                 max_x = max(max_x, cx)
                 max_y = max(max_y, cy)
-                
+
                 for dx, dy in nbrs:
                     stack.append((cx + dx, cy + dy))
         return min_x, min_y, max_x, max_y
@@ -380,21 +168,7 @@ def find_connected_components_bbox(image, min_area=0, connectivity=4):
     return bounding_boxes
 
 
-bboxes = find_connected_components_bbox(finished_image)
-median_height = find_median_height(bboxes)
-min_area = (median_height * median_height) / (2.5)
-bboxes = list(filter(lambda x: bbox_area(x) > min_area, bboxes))
-print(f"{min_area, median_height=}")
-words = 0
-for bbox in bboxes:
-    min_x, min_y, max_x, max_y = bbox
-    area = bbox_area(bbox)
-    words += 1
-    cv2.rectangle(orig, (min_y, min_x), (max_y, max_x), (0, 0, 255), 1)
-
-
-def count_lines(bboxes):
-    global orig
+def count_lines(bboxes, orig):
     if len(bboxes) == 0:
         return 0
 
@@ -452,43 +226,58 @@ def count_columns(bboxes):
 
 
 def distance(bbox1, bbox2):
-    import math
-
-
-def distance(bbox1, bbox2):
     """
     Calculate the distance between the closest edges of two bounding boxes.
     """
-    left1, top1, right1, bottom1 = bbox1
-    left2, top2, right2, bottom2 = bbox2
+    if bbox_overlap(bbox1, bbox2):
+        return 0
 
-    # Initialize the minimum distance with a large value
     min_distance = float("inf")
 
-    for x1, y1 in [(left1, top1), (right1, top1), (right1, bottom1), (left1, bottom1)]:
+    l1, t1, r1, b1 = bbox1
+    l2, t2, r2, b2 = bbox2
+    assert l1 < r1 and t1 < b1
+    assert l2 < r2 and t2 < b2
+
+    overlap_y = min(b1, b2) - max(t1, t2)
+    overlap_x = min(r1, r2) - max(l1, l2)
+    if overlap_y > 0:
+        if overlap_x > 0:
+            print(f'{bbox1,bbox2=}')
+            exit(1)
+        l1_dist = min(abs(l1 - l2), abs(l1 - r2))
+        r1_dist = min(abs(r1 - l2), abs(r1 - r2))
+        dist = min(r1_dist, l1_dist)
+        if dist < min_distance:
+            min_distance = dist
+
+    if overlap_x > 0:
+        assert not overlap_y > 0
+        b1_dist = min(abs(b1 - b2), abs(b1 - r2))
+        t1_dist = min(abs(t1 - b2), abs(t1 - t2))
+        dist = min(t1_dist, b1_dist)
+        if dist < min_distance:
+            min_distance = dist
+
+    if overlap_y > 0:
+        l1_dist = min(abs(l1 - l2), abs(l1 - r2))
+        r1_dist = min(abs(r1 - l2), abs(r1 - r2))
+        dist = min(r1_dist, l1_dist)
+        if dist < min_distance:
+            min_distance = dist
+
+    for x1, y1 in [(l1, t1), (r1, t1), (r1, b1), (l1, b1)]:
         for x2, y2 in [
-            (left2, top2),
-            (right2, top2),
-            (right2, bottom2),
-            (left2, bottom2),
+            (l2, t2),
+            (r2, t2),
+            (r2, b2),
+            (l2, b2),
         ]:
             dist = np.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
             if dist < min_distance:
                 min_distance = dist
 
     return min_distance
-
-
-def _bbox_overlap(bbox1, bbox2):
-    """
-    Check if two bounding boxes overlap.
-    """
-    left1, top1, right1, bottom1 = bbox1
-    left2, top2, right2, bottom2 = bbox2
-
-    # overlap = max(0, min(prev2, y2) - max(prev1, y1))
-
-    return not (right1 < left2 or right2 < left1 or bottom1 < top2 or bottom2 < top1)
 
 
 def bbox_overlap(bbox1, bbox2):
@@ -498,16 +287,20 @@ def bbox_overlap(bbox1, bbox2):
     left1, top1, right1, bottom1 = bbox1
     left2, top2, right2, bottom2 = bbox2
 
-    # Calculate the overlap area
     overlap_left = max(left1, left2)
     overlap_top = max(top1, top2)
     overlap_right = min(right1, right2)
     overlap_bottom = min(bottom1, bottom2)
 
-    # If the overlap area is valid (non-negative), the bounding boxes overlap
+
+    # If the overlap area is non-negative, the bounding boxes overlap
     if overlap_right > overlap_left and overlap_bottom > overlap_top:
+        overlap_y = min(bottom1, bottom2) - max(top1, top2)
+        overlap_x = min(right1, right2) - max(left1, left2)
+        assert overlap_y > 0 and overlap_x > 0
         return True
     else:
+
         return False
 
 
@@ -522,7 +315,7 @@ def group_bboxes(bboxes, max_distance) -> list[list]:
             r_idx = rest_idxs[counter]
             counter += 1
             dist = distance(bbox, bboxes[r_idx])
-            if dist <= max_distance or bbox_overlap(bbox, bboxes[r_idx]):
+            if dist < max_distance or bbox_overlap(bbox, bboxes[r_idx]):
                 close_idxs.append(r_idx)
                 rest_idxs.remove(r_idx)
                 bbox = enclosing_bbox([bbox, bboxes[r_idx]])
@@ -563,13 +356,89 @@ def enclosing_bbox(bboxes):
     return (x_min, y_min, x_max, y_max)
 
 
-list_of_bboxes = group_bboxes(bboxes, max_distance=max(median_height * 1.75, 10))
-for bbxs in list_of_bboxes:
-    x, y, x2, y2 = enclosing_bbox(bbxs)
-    cv2.rectangle(orig, (y, x), (y2, x2), (0, 244, 55), 4)
+def main():
+    # orig = cv2.imread("./assets/ocr/lorem_s12_c02_noise.pbm") # 583 words, 52 lines, 2 columns, 7 blocks.
+    # orig = cv2.imread("./assets/ocr/extra/lorem_s16_c02.png") # 318 words, 39 lines, 2 columns, 4 blocks.
+    # orig = cv2.imread('./assets/ocr/lorem_s12_c03.pbm') # 557 words, 52 lines, 3 columns, 8 blocks.
+    # (exibits wrong blocks because of heights) orig = cv2.imread("./assets/ocr/lorem_s12_c03_just.pbm")  # 557 words, 52 lines, 3 columns, 8 blocks.
+    # orig = cv2.imread("./assets/ocr/extra/arial_s14_c04_left.png")
+    # orig = cv2.imread("./assets/ocr/extra/cascadia_code_s10_c02_right_bold_noisy.pbm") # 395 words, 42 lines, 2 columns, 5 blocks.
+    
+    image_path = "./assets/ocr/extra/cascadia_code_s16_c02_center.png"
+    orig = cv2.imread(image_path)
+    print(f"{orig.shape=}")
+    cv2.imwrite(f'{image_path[:image_path.rfind(".")]}.pbm', pbm(orig))
+    
+    # Convert the image to grayscale
+    image = cv2.cvtColor(orig, cv2.COLOR_BGR2GRAY)
+    cv2.imwrite(f"./output/orig.png", image)
+    
+    # Small resolution, ain't worth it
+    if True or image.shape[0] * image.shape[1] > 1124 * 795:
+        image = cv2.medianBlur(image, 3)
+    else:
+        image = cv2.erode(image, np.array([1, 1, 1]), iterations=1)
+        image = cv2.dilate(image, np.array([1, 1, 1]), iterations=1)
+    
+    cv2.imwrite(f"./output/noise_free.png", image)
 
 
-print(
-    f"# {words} words, {count_lines(bboxes)} lines, {count_columns(bboxes)} columns, {len(list_of_bboxes)} blocks."
-)
-cv2.imwrite("./output/detected.png", orig)
+    _, image = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    cv2.imwrite(f"./output/threshold.png", image)
+    # Morphological operations
+    image = cv2.dilate(image, horz_kernel_5x5_truncated, iterations=2)
+    cv2.imwrite(f"./output/dilate.png", image)
+    
+    # image = cv2.erode(image, horz_kernel_3x3, iterations=1)
+    # cv2.imwrite(f"./output/erode.png", image)
+    
+    kernel = create_text_kernel(5)
+    kernel = create_circular_kernel(3)
+    kernel = horz_kernel_3x3
+    print(f"{kernel=}")
+    
+    image = im_close(image, kernel)
+    image = im_open(image, kernel)
+    cv2.imwrite("./output/open.png", image)
+    image = im_close(image, kernel)
+    cv2.imwrite(f"./output/close.png", image)
+
+    image = cv2.dilate(
+        image,
+        block_kernel,
+        iterations=0,
+    )
+
+
+    # image = hit_or_miss(image)
+    # cv2.imwrite("./output/hit_or_miss.png", image)
+
+    finished_image = image
+
+    cv2.imwrite("./output/finished.png", finished_image)
+    bboxes = find_connected_components_bbox(finished_image)
+    print(f'{bboxes=}')
+    best_height = choose_best_height(bboxes)
+    min_area = (best_height * best_height) / (2.5)
+    bboxes = list(filter(lambda x: bbox_area(x) > min_area, bboxes))
+    print(f"{min_area, best_height=}")
+    words = 0
+    for bbox in bboxes:
+        min_x, min_y, max_x, max_y = bbox
+        area = bbox_area(bbox)
+        words += 1
+        cv2.rectangle(orig, (min_y, min_x), (max_y, max_x), (0, 0, 255), 1)
+
+    list_of_bboxes = group_bboxes(bboxes, max_distance=best_height)
+    for bbxs in list_of_bboxes:
+        x, y, x2, y2 = enclosing_bbox(bbxs)
+        cv2.rectangle(orig, (y, x), (y2, x2), (0, 244, 55), 4)
+
+    print(
+        f"# {words} words, {count_lines(bboxes, orig)} lines, {count_columns(bboxes)} columns, {len(list_of_bboxes)} blocks."
+    )
+    cv2.imwrite("./output/detected.png", orig)
+
+
+if __name__ == "__main__":
+    main()
