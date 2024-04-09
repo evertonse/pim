@@ -65,9 +65,9 @@ median :: proc(image: Matrix, filter_size: i32 = 3) -> Matrix {
                     // Check if the current pixel is within the image bounds
                     if x + i_offset >= 0 && x + i_offset < image.width &&
                        y + j_offset >= 0 && y + j_offset < image.height {
-                        color = 0.0
+                            color = image.data[(y + j_offset)*image.width + (x + i_offset)]
                     } else {
-                        color = image.data[y*image.width + x]
+                        color = 0.0
                     }
                     append(&colors, color)
                 }

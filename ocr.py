@@ -5,9 +5,61 @@ import numpy as np
 from kernels import *
 
 
+def write_ppm_file(filepath, image):
+    height, width = image.shape[:2]
+
+    with open(filepath, "w") as f:
+        f.write("P3\n")
+        f.write("# ExCyber Power Style\n")
+        f.write(f"{width} {height}\n")
+        f.write("255\n")
+
+        for row in image:
+            for pixel in row:
+                if len(image.shape) == 3:
+                    f.write(f"{pixel[0]} {pixel[1]} {pixel[2]} ")
+                else:
+                    f.write(f"{pixel} {pixel} {pixel} ")
+            f.write("\n")
+
+
+def read_ppm_file(filepath):
+    """
+    https://oceancolor.gsfc.nasa.gov/staff/norman/seawifs_image_cookbook/faux_shuttle/pbm.html
+    """
+    with open(filepath, "r") as f:
+        header = f.readline().strip()
+        assert header == "P1", "Only P1 format is supported."
+
+        # Skip comment lines
+        line = f.readline().strip()
+        while line.startswith("#"):
+            line = f.readline().strip()
+
+        width, height = map(int, line.strip().split())
+
+        # Read pixel data
+        pixel_data = []
+        while line:
+            line = (
+                f.readline().replace(" ", "").replace("\n", "")
+            )  # white space is ignored
+            if line.startswith("#"):
+                continue
+            # Each pixel in is represented by a byte containing ASCII '1' or '0', representing black and white respectively. There are no fill bits at the end of a row.
+            pixel_data.extend(map(lambda x: 255 if x == "0" else 0, line))
+
+    array = np.array(pixel_data,dtype=np.uint8).reshape(height, width)
+    return array
+
+
 def pbm(image):
     image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     _, image = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    return image
+
+def invert(image):
+    image = cv2.bitwise_not(image)
     return image
 
 
@@ -17,7 +69,7 @@ def noisify(image):
         for j in range(noisy_image.shape[1]):
             # Generate a random value between -1 and 1
             noise = random.uniform(0, 1)
-            if noise > 0.95:
+            if noise > 0.989:
                 noisy_image[i, j] = 0
     return noisy_image
 
@@ -36,7 +88,62 @@ def im_close(image, kernel, iterations=1):
     return image
 
 
+def median_blur(image, filter_size=3):
+    assert(len(image.shape) == 2)
 
+    convolved = image.copy()
+    height = image.shape[1]
+    width = image.shape[0]
+    for y in range(height):
+        for x in range(width):
+            colors = []
+            for j in range(filter_size):
+                for i in range(filter_size):
+                    i_offset = i - filter_size // 2
+                    j_offset = j - filter_size // 2
+                    if (
+                        (x + i_offset) >= 0
+                        and (x + i_offset) < width
+                        and y + j_offset >= 0
+                        and y + j_offset < height
+                    ):
+                        color = image[x + i_offset, y + j_offset]
+                    else:
+                        color = 0
+                    colors.append(color)
+            colors.sort()
+            convolved[x, y] = colors[(len(colors) // 2)]
+    return convolved
+
+
+def erode(image, se, iterations=1):
+    assert(len(image.shape) == 2)
+
+    result = image.copy()
+    height = image.shape[1]
+    width = image.shape[0]
+
+    se_height = se.shape[1]
+    se_width  = se.shape[0]
+    for y in range(len()):
+        for x in range(width):
+            colors = []
+            for j in range(filter_size):
+                for i in range(filter_size):
+                    i_offset = i - se_width  // 2
+                    j_offset = j - se_height // 2
+                    if (
+                        (x + i_offset) >= 0
+                        and (x + i_offset) < width
+                        and y + j_offset >= 0
+                        and y + j_offset < height
+                    ):
+                        color = image[x + i_offset, y + j_offset]
+                    else:
+                        color = 0
+                    se_color = se[i, j]
+            result[x, y] = colors[(len(colors) // 2)]
+    return result
 
 
 def hit_or_miss(binary_image, structuring_element=None):
@@ -80,15 +187,12 @@ def hit_or_miss(binary_image, structuring_element=None):
     return result
 
 
-
 def bbox_area(bbox):
     x1, y1, x2, y2 = bbox
     width = abs(x2 - x1)
     height = abs(y2 - y1)
     area = width * height
     return area
-
-
 
 
 def choose_best_height(bboxes):
@@ -243,7 +347,7 @@ def distance(bbox1, bbox2):
     overlap_x = min(r1, r2) - max(l1, l2)
     if overlap_y > 0:
         if overlap_x > 0:
-            print(f'{bbox1,bbox2=}')
+            print(f"{bbox1,bbox2=}")
             exit(1)
         l1_dist = min(abs(l1 - l2), abs(l1 - r2))
         r1_dist = min(abs(r1 - l2), abs(r1 - r2))
@@ -292,7 +396,6 @@ def bbox_overlap(bbox1, bbox2):
     overlap_right = min(right1, right2)
     overlap_bottom = min(bottom1, bottom2)
 
-
     # If the overlap area is non-negative, the bounding boxes overlap
     if overlap_right > overlap_left and overlap_bottom > overlap_top:
         overlap_y = min(bottom1, bottom2) - max(top1, top2)
@@ -300,7 +403,6 @@ def bbox_overlap(bbox1, bbox2):
         assert overlap_y > 0 and overlap_x > 0
         return True
     else:
-
         return False
 
 
@@ -362,41 +464,54 @@ def main():
     # orig = cv2.imread('./assets/ocr/lorem_s12_c03.pbm') # 557 words, 52 lines, 3 columns, 8 blocks.
     # (exibits wrong blocks because of heights) orig = cv2.imread("./assets/ocr/lorem_s12_c03_just.pbm")  # 557 words, 52 lines, 3 columns, 8 blocks.
     # orig = cv2.imread("./assets/ocr/extra/arial_s14_c04_left.png")
-    # orig = cv2.imread("./assets/ocr/extra/cascadia_code_s10_c02_right_bold_noisy.pbm") # 395 words, 42 lines, 2 columns, 5 blocks.
-    
+
     image_path = "./assets/ocr/extra/cascadia_code_s16_c02_center.png"
+    image_path = "./assets/ocr/extra/cascadia_code_s10_c02_right_bold.pbm" # 395 words, 42 lines, 2 columns, 5 blocks.
+    image_path = "./assets/ocr/extra/cascadia_code_s10_c02_right_bold_noisy.pbm" # 395 words, 42 lines, 2 columns, 5 blocks.
+
+    ppm_file = read_ppm_file(image_path)
+    write_ppm_file(f"./output/ppm_file.ppm", ppm_file)
     orig = cv2.imread(image_path)
-    print(f"{orig.shape=}")
-    cv2.imwrite(f'{image_path[:image_path.rfind(".")]}.pbm', pbm(orig))
-    
-    # Convert the image to grayscale
-    image = cv2.cvtColor(orig, cv2.COLOR_BGR2GRAY)
-    cv2.imwrite(f"./output/orig.png", image)
-    
+    orig = ppm_file
+
+    # ok = cv2.imwrite(f'{image_path[:image_path.rfind(".")]}.pbm', pbm(orig))
+    # cv2.imwrite(f'{image_path[:image_path.rfind(".")]}_noisy.pbm', noisify(invert(pbm(orig))))
+    # exit(0)
+
+    # print(f"{orig=}")
+    # print(f"{orig.shape=}")
+    print(f"{ppm_file.shape=}")
+    # print(f"{np.array_equal(orig, ppm_file)=}")
+
+    image = ppm_file
+    if len(image.shape) == 3:
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        print(f"{image.shape=}")
+
     # Small resolution, ain't worth it
     if True or image.shape[0] * image.shape[1] > 1124 * 795:
-        image = cv2.medianBlur(image, 3)
+        median_blur = cv2.medianBlur
+        image = median_blur(image, 3)
     else:
         image = cv2.erode(image, np.array([1, 1, 1]), iterations=1)
         image = cv2.dilate(image, np.array([1, 1, 1]), iterations=1)
-    
-    cv2.imwrite(f"./output/noise_free.png", image)
 
+    cv2.imwrite(f"./output/noise_free.png", image)
 
     _, image = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
     cv2.imwrite(f"./output/threshold.png", image)
     # Morphological operations
     image = cv2.dilate(image, horz_kernel_5x5_truncated, iterations=2)
     cv2.imwrite(f"./output/dilate.png", image)
-    
+
     # image = cv2.erode(image, horz_kernel_3x3, iterations=1)
     # cv2.imwrite(f"./output/erode.png", image)
-    
+
     kernel = create_text_kernel(5)
     kernel = create_circular_kernel(3)
     kernel = horz_kernel_3x3
     print(f"{kernel=}")
-    
+
     image = im_close(image, kernel)
     image = im_open(image, kernel)
     cv2.imwrite("./output/open.png", image)
@@ -409,15 +524,11 @@ def main():
         iterations=0,
     )
 
-
-    # image = hit_or_miss(image)
-    # cv2.imwrite("./output/hit_or_miss.png", image)
-
     finished_image = image
 
     cv2.imwrite("./output/finished.png", finished_image)
     bboxes = find_connected_components_bbox(finished_image)
-    print(f'{bboxes=}')
+    print(f"{bboxes=}")
     best_height = choose_best_height(bboxes)
     min_area = (best_height * best_height) / (2.5)
     bboxes = list(filter(lambda x: bbox_area(x) > min_area, bboxes))
