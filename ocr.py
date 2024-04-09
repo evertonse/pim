@@ -6,6 +6,8 @@ import subprocess
 import numpy as np
 
 def create_video_from_images(images, output_video_path, fps=24):
+    if len(images) == 0:
+        return
     height, width, _ = images[0].shape
 
     ffmpeg_cmd = [
@@ -122,14 +124,14 @@ def rectangle(image, pt1, pt2, color, thickness=1):
     return image
 
 
-def im_open(image, kernel, iterations=1):
+def opening(image, kernel, iterations=1):
     for _ in range(iterations):
         image = erode(image, kernel, iterations=1)
         image = dilate(image, kernel, iterations=1)
     return image
 
 
-def im_close(image, kernel, iterations=1):
+def closing(image, kernel, iterations=1):
     for _ in range(iterations):
         image = dilate(image, kernel, iterations=1)
         image = erode(image, kernel, iterations=1)
@@ -202,38 +204,42 @@ def erode(image, kernel, iterations=1):
     return result
 
 def dilate(image, kernel, iterations=1):
-    assert kernel.shape[0] % 2 != 0, f'{kernel.shape=}'
+    def internal_dilate(image, kernel):
+        assert kernel.shape[0] % 2 != 0, f'{kernel.shape=}'
+        result = np.zeros_like(image)
+        height = image.shape[0]
+        width  = image.shape[1]
+        kernel_height = kernel.shape[1]
+        kernel_width  = kernel.shape[0]
+        kernel_width_delta = kernel_width  // 2
+        kernel_height_delta = kernel_height // 2
+        for y in range(height):
+            for x in range(width):
+                all_good = False
+                for j in range(kernel_height):
+                    for i in range(kernel_width):
+                        i_offset = i - kernel_width_delta
+                        j_offset = j - kernel_height_delta
+                        color = 0
+                        if (
+                            (x + i_offset) >= 0
+                            and (x + i_offset) < width
+                            and y + j_offset >= 0
+                            and y + j_offset < height
+                        ):
+                            color = image[y + j_offset, x + i_offset]
+                        kernel_color = kernel[j, i]
+                        if kernel_color > 0 and color > 0:
+                            all_good = True
+                if all_good:
+                    result[y, x] = 255
+                else:
+                    result[y, x] = 0
+        return result
 
-    result = image.copy()
-
-    height = image.shape[0]
-    width  = image.shape[1]
-
-    kernel_height = kernel.shape[1]
-    kernel_width  = kernel.shape[0]
-    for y in range(height):
-        for x in range(width):
-            all_good = False
-            for j in range(kernel_height):
-                for i in range(kernel_width):
-                    i_offset = i - kernel_width  // 2
-                    j_offset = j - kernel_height // 2
-                    color = 0
-                    if (
-                        (x + i_offset) >= 0
-                        and (x + i_offset) < width
-                        and y + j_offset >= 0
-                        and y + j_offset < height
-                    ):
-                        color = image[y + j_offset, x + i_offset]
-                    kernel_color = kernel[j, i]
-                    if kernel_color > 0 and color > 0:
-                        all_good = True
-            if all_good:
-                result[y, x] = 255
-            else:
-                result[y, x] = 0
-    return result
+    for _ in range(iterations):
+        image = internal_dilate(image, kernel)
+    return image
 
 
 def hit_or_miss(binary_image, structuring_element=None):
@@ -241,8 +247,6 @@ def hit_or_miss(binary_image, structuring_element=None):
     if structuring_element is None:
         structuring_element = np.array(
             [
-                [0, 0, 1, 0, 0],
-                [1, 1, 1, 1, 1],
                 [1, 1, 1, 1, 1],
                 [1, 1, 1, 1, 1],
                 [0, 1, 1, 1, 0],
@@ -324,7 +328,7 @@ def choose_best_height(bboxes):
     return median_height
 
 
-def find_connected_components_bbox(image, min_area=0, connectivity=4):
+def find_connected_components_bbox(image, min_area=0, connectivity=8):
     def dfs(x, y):
         nbrs = [(1, 0), (-1, 0), (0, 1), (0, -1)]
         if connectivity == 8:
@@ -583,31 +587,28 @@ def main():
         median_blur = cv2.medianBlur
         image = median_blur(image, 3)
     else:
-        image = erode(image, np.array([1, 1, 1]), iterations=1)
-        image = dilate(image, np.array([1, 1, 1]), iterations=1)
+        image = opening(image, np.array([1, 1, 1]))
+        image = closing(image, np.array([1, 1, 1]))
 
     cv2.imwrite(f"./output/noise_free.png", image)
 
     _, image = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
     cv2.imwrite(f"./output/threshold.png", image)
-    # Morphological operations
+
     image = dilate(image, horz_kernel_5x5_truncated, iterations=2)
     cv2.imwrite(f"./output/dilate.png", image)
 
-    # image = cv2.erode(image, horz_kernel_3x3, iterations=1)
-    # cv2.imwrite(f"./output/erode.png", image)
-
-    kernel = create_text_kernel(5)
-    kernel = create_circular_kernel(3)
+    # kernel = create_text_kernel(5)
+    # kernel = create_circular_kernel(3)
     kernel = horz_kernel_3x3
     print(f"{kernel=}")
 
     economy_mode = True
-    image = im_close(image, kernel)
     if not economy_mode:
-        image = im_open(image, kernel)
+        image = closing(image, kernel)
+        image = opening(image, kernel)
         cv2.imwrite("./output/open.png", image)
-        image = im_close(image, kernel)
+        image = closing(image, kernel)
         cv2.imwrite(f"./output/close.png", image)
 
     image = dilate(
