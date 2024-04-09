@@ -5,7 +5,7 @@ import numpy as np
 from kernels import *
 import subprocess
 
-def create_video_from_images(images, output_video_path, fps=30):
+def create_video_from_images(images, output_video_path, fps=24):
     height, width, _ = images[0].shape
 
     ffmpeg_cmd = [
@@ -164,15 +164,15 @@ def median_blur(image, filter_size=3):
     return convolved
 
 
-def erode(image, se, iterations=1):
-    assert(len(image.shape) == 2)
+def erode(image, kernel, iterations=1):
+    assert(len(kernel.shape) % 2 != 0)
 
     result = image.copy()
     height = image.shape[1]
     width = image.shape[0]
 
-    se_height = se.shape[1]
-    se_width  = se.shape[0]
+    se_height = kernel.shape[1]
+    se_width  = kernel.shape[0]
     for y in range(len()):
         for x in range(width):
             colors = list()
@@ -189,7 +189,7 @@ def erode(image, se, iterations=1):
                         color = image[x + i_offset, y + j_offset]
                     else:
                         color = 0
-                    se_color = se[i, j]
+                    se_color = kernel[i, j]
             result[x, y] = colors[(len(colors) // 2)]
     return result
 
