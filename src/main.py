@@ -1,131 +1,123 @@
-import cv2
+import os
+import random
+import subprocess
 import numpy as np
 
-# Define your custom kernel
-kernel = np.array([
-    [-1, -1, -1],
-    [-1,  8, -1],
-    [-1, -1, -1]
-])
 
-kernel_laplacian = np.array([
-    [1,  1, 1],
-    [1, -8, 1],
-    [1,  1, 1]
-], dtype='float64')
+import ocr 
+from utils import *
+from kernels import *
 
-kernel_laplacian_sharp = np.array([
-    [-1,  -1, -1],
-    [-1,   9, -1],
-    [-1,  -1, -1]
-], dtype='float64')
+ECONOMY_MODE = True # If turn off, the algorithm works for more cases
+GO_FAST = True
+if GO_FAST:
+    import cv2
+    median_blur = cv2.medianBlur
+    dilate = cv2.dilate
+    erode = cv2.erode
 
+def pbm(image):
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    _, image = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    return image
 
-kernel_sobel_x = np.array([
-    [-1, 0, 1],
-    [-2, 0, 2],
-    [-1, 0, 1]
-])
+def invert(image):
+    image = cv2.bitwise_not(image)
+    return image
 
-kernel_sobel_y = np.array([
-    [ 1,  2,  1],
-    [ 0,  0,  0],
-    [-1, -2, -1]
-])
+def main():
+    # image_path = "./assets/ocr/lorem_s12_c02_noise.pbm" # 583 words, 52 lines, 2 columns, 7 blocks.
+    # image_path = "./assets/ocr/extra/lorem_s16_c02.png" # 318 words, 39 lines, 2 columns, 4 blocks.
+    # (exibits wrong blocks because of heights) image_path = "./assets/ocr/lorem_s12_c03_just.pbm"  # 557 words, 52 lines, 3 columns, 8 blocks.
+    image_path = "./assets/ocr/extra/arial_s14_c04_left.png"
 
+    image_path = (
+        "./assets/ocr/lorem_s12_c03.pbm"  # 557 words, 52 lines, 3 columns, 8 blocks.
+    )
+    image_path = "./assets/ocr/extra/cascadia_code_s16_c02_center.png"
+    image_path = "./assets/ocr/extra/cascadia_code_s10_c02_right_bold.pbm"  # 395 words, 42 lines, 2 columns, 5 blocks.
+    image_path = "./assets/ocr/extra/cascadia_code_s10_c02_right_bold_noisy.pbm"  # 395 words, 42 lines, 2 columns, 5 blocks.
 
-kernel_gaussian_blur = np.array([
-    [1.0/16, 2.0/16, 1.0/16],
-    [2.0/16, 4.0/16, 2.0/16],
-    [1.0/16, 2.0/16, 1.0/16], 
-], dtype='float64')
+    ppm_file = ocr.read_ppm_file(image_path)
+    ocr.write_ppm_file(f"./output/ppm_file.ppm", ppm_file)
+    orig = ocr.convert_to_rgb(ppm_file)
+    print(f"{orig.shape=}")
+    print(f"{ppm_file.shape=}")
 
-kernel_gaussian_blur5x5 = np.array([
-    [1,4,7,4,1],
-    [4,16,26,16,4],
-    [7,26,41,26,7],
-    [4,16,26,16,4],
-    [1,4,7,4,1],
-], dtype='float64')/273
-
-
-def unsharp(img, amount=5):
-    # blur = cv2.filter2D(orig, -1,kernel_gaussian_blur5x5)
-    blur = cv2.filter2D(img, -1, kernel_gaussian_blur5x5)
-    img2 = (img-blur)
-    img3 = (img+amount*img2)
-
-    cv2.imwrite('img2.png', img2)
-    cv2.imwrite('img3.png', img3)
-    return img3 
-
-def laplacian_sharpening(img):
-    edges = cv2.filter2D(img, -1, kernel_laplacian)
-    return img - edges
-
-def histrogram(img, L=256):
-    histogram = [0]*L
-    for p in range(L): 
-        histogram[p] = 0.0
-    for j in range(img.shape[0]) :
-        for i in range(img.shape[1]) :
-            x,y = i,j
-            color = img[x,y]
-            intesity = int(color)
-            histogram[intesity] += 1.0
-    print(histogram)
-    histogram /= float(img.shape[0] * img.shape[1])
-    for p in range(1,L): 
-        histogram[p] += histogram[p-1]
-    print(histogram)
-    for p in range(L):
-        histogram[p] *= L-1
-    print(histogram)
+    def do_the_noise_invert_thing():  # BEWARE to not mess with ready to work files
+        ocr.write_ppm_file(f'{image_path[:image_path.rfind(".")]}.pbm', ocr.pbm(orig))
+        ocr.write_ppm_file(
+            f'{image_path[:image_path.rfind(".")]}_noisy.pbm',
+            ocr.noisify(ocr.invert(ocr.pbm(orig))),
+        )
 
 
-# Load the input image
-# bgr_image = cv2.imread('./assets/images/beans.png')
-# bgr_image = cv2.imread('./assets/images/lua.png')
-# bgr_image = cv2.imread('./assets/images/xadrez.png')
-# bgr_image = cv2.imread('./assets/images/half_black_half_white.png')
-# bgr_image = cv2.imread('./assets/images/salted_1.png')
-bgr_image = cv2.imread('./assets/images/lago_escuro.png')
+    image = ppm_file
+    # Small resolution, ain't worth it
+    if image.shape[0] * image.shape[1] > 795 * 795:
+        image = median_blur(image, 3)
 
-# Convert the image to grayscale
-image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2GRAY)
-image = np.array(image, dtype='float64')
+    ocr.write_ppm_file("./output/.threshold.ppm", image)
 
-image = np.array([
-    [9,9,9,9,9,9,9,9,9],
-    [9,7,7,7,7,7,7,7,9],
-    [9,7,5,5,5,5,5,7,9],
-    [9,7,5,3,3,3,5,7,9],
-    [9,7,5,3,1,3,5,7,9],
-    [9,7,5,3,3,3,5,7,9],
-    [9,7,5,5,5,5,5,7,9],
-    [9,7,7,7,7,7,7,7,9],
-    [9,9,9,9,9,9,9,9,9],
-], dtype='float32')
+    _, image = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    ocr.write_ppm_file("./output/threshold.ppm", image)
 
-# Aplicar filtro de mediana
-image = cv2.medianBlur(image, 3)
-cv2.imwrite('median.png', image)
-print(image)
+    image = ocr.dilate(image, horz_kernel_5x5_truncated, iterations=2)
+    ocr.write_ppm_file("./output/dilate.ppm", image)
 
+    # kernel = create_text_kernel(5)
+    # kernel = create_circular_kernel(3)
+    kernel = horz_kernel_3x3
+    print(f"{kernel=}")
 
-laplacian_sharped = laplacian_sharpening(image)
-cv2.imwrite('laplacian_sharped.png', laplacian_sharped)
+    if not ECONOMY_MODE:
+        image = ocr.closing(image, kernel)
+        image = ocr.opening(image, kernel)
+        ocr.write_ppm_file("./output/open.ppm", image)
+        image = ocr.closing(image, kernel)
+        ocr.write_ppm_file(f"./output/close.ppm", image)
 
-# convolved_image = cv2.filter2D(image, -1, kernel_laplacian_sharp)
-convolved_image = cv2.filter2D(image, -1, kernel_sobel_x)
-for i in range(1000):
-    convolved_image = cv2.filter2D(image, -1, kernel_gaussian_blur)
-    image = convolved_image
-unsharped_image = unsharp(image)
-
-# Display the original and convolved images
-cv2.imwrite('original.png',  image)
-cv2.imwrite('convolved.png', convolved_image)
-cv2.imwrite('unsharp.png', unsharped_image)
+    image = dilate(
+        image,
+        block_kernel,
+        iterations=0,
+    )
 
 
+    ocr.write_ppm_file("./output/processed.ppm", image)
+
+    bboxes = ocr.find_connected_components_bbox(image)
+
+    best_height = ocr.choose_best_height(bboxes)
+    min_area = (best_height * best_height) / (2.5)
+    print(f"{min_area, best_height=}")
+
+    # Filter it to eliminate punctuation bbox
+    bboxes = list(filter(lambda x: ocr.bbox_area(x) > min_area, bboxes))
+
+    words = 0
+    for bbox in bboxes:
+        min_x, min_y, max_x, max_y = bbox
+        area = ocr.bbox_area(bbox)
+        words += 1
+        ocr.rectangle(orig, (min_y, min_x), (max_y, max_x), (255, 0, 0), 1)
+
+    list_of_bboxes = ocr.group_bboxes(bboxes, max_distance=best_height, image=orig)
+    for bbxs in list_of_bboxes:
+        x, y, x2, y2 = ocr.enclosing_bbox(bbxs)
+        ocr.rectangle(orig, (y, x), (y2, x2), (0, 244, 55), 4)
+
+    ocr.write_ppm_file(f"./output/detected.ppm", orig)
+
+    lines = ocr.count_lines(bboxes, orig)
+    columns = ocr.count_columns(bboxes)
+
+    ocr.create_video_from_images(ocr.vid_images, "./output/video.mp4")
+
+    print(
+        f"\n# {words} words, {lines} lines, {columns} columns, {len(list_of_bboxes)} blocks."
+    )
+
+
+if __name__ == "__main__":
+    main()
