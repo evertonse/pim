@@ -3,7 +3,42 @@ import os
 import random
 import numpy as np
 from kernels import *
+import subprocess
 
+def create_video_from_images(images, output_video_path, fps=30):
+    height, width, _ = images[0].shape
+
+    ffmpeg_cmd = [
+        'ffmpeg',
+        '-y',  # Overwrite file if it already exists
+        '-f', 'rawvideo',
+        '-vcodec', 'rawvideo',
+        '-s', f'{width}x{height}',
+        '-pix_fmt', 'rgb24',
+        '-r', str(fps),  # FPS
+        '-i', '-',       # Read input from stdin
+        '-c:v', 'libx264',  # IDK
+        '-preset', 'medium', # IDK, something to do with enconding speed
+        '-crf', '23',  # lower value means better quality but larger file size
+        output_video_path
+    ]
+    ffmpeg_process = subprocess.Popen(ffmpeg_cmd, stdin=subprocess.PIPE)
+    for numpy_image in images:
+        ffmpeg_process.stdin.write(numpy_image.tobytes())
+    ffmpeg_process.stdin.close()
+    ffmpeg_process.wait()
+
+
+def convert_to_rgb(image):
+    assert len(image.shape) == 2
+    data = list()
+    height = image.shape[0]
+    width = image.shape[1]
+    for j in range(height):
+        for i in range(width):
+            data.extend([image[j,i], image[j,i], image[j,i]])
+    result = np.array(data, dtype=np.uint8).reshape(height, width, 3)
+    return result
 
 def write_ppm_file(filepath, image):
     height, width = image.shape[:2]
@@ -39,7 +74,7 @@ def read_ppm_file(filepath):
         width, height = map(int, line.strip().split())
 
         # Read pixel data
-        pixel_data = []
+        pixel_data = list()
         while line:
             line = (
                 f.readline().replace(" ", "").replace("\n", "")
@@ -73,6 +108,19 @@ def noisify(image):
                 noisy_image[i, j] = 0
     return noisy_image
 
+def rectangle(image, pt1, pt2, color, thickness=1):
+    assert image.shape[-1] == len(color)
+    x1, y1 = pt1
+    x2, y2 = pt2
+
+    image[y1:y1+thickness, x1:x2+1] = color
+    image[y2:y2+thickness, x1:x2+1] = color
+
+    image[y1:y2+thickness, x1:x1+thickness] = color
+    image[y1:y2+thickness, x2:x2+thickness] = color
+
+    return image
+
 
 def im_open(image, kernel, iterations=1):
     for _ in range(iterations):
@@ -92,11 +140,11 @@ def median_blur(image, filter_size=3):
     assert(len(image.shape) == 2)
 
     convolved = image.copy()
-    height = image.shape[1]
-    width = image.shape[0]
+    height = image.shape[0]
+    width = image.shape[1]
     for y in range(height):
         for x in range(width):
-            colors = []
+            colors = list()
             for j in range(filter_size):
                 for i in range(filter_size):
                     i_offset = i - filter_size // 2
@@ -107,12 +155,12 @@ def median_blur(image, filter_size=3):
                         and y + j_offset >= 0
                         and y + j_offset < height
                     ):
-                        color = image[x + i_offset, y + j_offset]
+                        color = image[y + j_offset, x + i_offset]
                     else:
                         color = 0
                     colors.append(color)
             colors.sort()
-            convolved[x, y] = colors[(len(colors) // 2)]
+            convolved[y, x] = colors[(len(colors) // 2)]
     return convolved
 
 
@@ -127,7 +175,7 @@ def erode(image, se, iterations=1):
     se_width  = se.shape[0]
     for y in range(len()):
         for x in range(width):
-            colors = []
+            colors = list()
             for j in range(filter_size):
                 for i in range(filter_size):
                     i_offset = i - se_width  // 2
@@ -197,7 +245,7 @@ def bbox_area(bbox):
 
 def choose_best_height(bboxes):
     # List to store heights of bounding boxes
-    heights = []
+    heights = list()
 
     # Iterate over all bounding boxes
     for bbox in bboxes:
@@ -213,7 +261,7 @@ def choose_best_height(bboxes):
     print(f"{heights=}")
 
     # Filter out outliers
-    filtered_heights = []
+    filtered_heights = list()
     for height in heights:
         dh = abs(height - median_height)
         if dh < 0.5 * median_height:
@@ -242,7 +290,7 @@ def find_connected_components_bbox(image, min_area=0, connectivity=4):
 
         min_x, min_y, max_x, max_y = x, y, x, y
         stack = [(x, y)]
-        while stack != []:
+        while stack != list():
             cx, cy = stack.pop()
             if (
                 0 <= cx < image.shape[0]
@@ -261,7 +309,7 @@ def find_connected_components_bbox(image, min_area=0, connectivity=4):
         return min_x, min_y, max_x, max_y
 
     visited = np.zeros_like(image, dtype=bool)
-    bounding_boxes = []
+    bounding_boxes = list()
 
     for i in range(image.shape[0]):
         for j in range(image.shape[1]):
@@ -277,17 +325,18 @@ def count_lines(bboxes, orig):
         return 0
 
     bboxes = sorted(bboxes, key=lambda bbox: (bbox[0], bbox[2]))
-    video_writer = cv2.VideoWriter(
-        "./output/video.avi",
-        cv2.VideoWriter_fourcc(*"XVID"),
-        30,
-        (orig.shape[1], orig.shape[0]),
-    )
+    # video_writer = cv2.VideoWriter(
+    #     "./output/video.avi",
+    #     cv2.VideoWriter_fourcc(*"XVID"),
+    #     30,
+    #     (orig.shape[1], orig.shape[0]),
+    # )
 
     lines = 1
     prev1, _, prev2, _ = bboxes[0]
     # Iterate through the sorted bounding boxes starting from the second one
-    xdiffs_bboxes = []
+    xdiffs_bboxes = list()
+    vid_images = list()
     for bbox in bboxes[1:]:
         y1, _, y2, _ = bbox
         overlap = max(0, min(prev2, y2) - max(prev1, y1))
@@ -298,11 +347,11 @@ def count_lines(bboxes, orig):
         prev1 = y1
         prev2 = y2
 
-        vis_img = orig.copy()
-        cv2.rectangle(vis_img, (0, y1), (orig.shape[0] - 1, y2), (255, 0, 0), 2)
-        video_writer.write(vis_img)
+        vid_img = orig.copy()
+        rectangle(vid_img, (0, y1), (orig.shape[0] - 1, y2), (0, 0, 255), 2)
+        vid_images.append(vid_img)
 
-    video_writer.release()
+    create_video_from_images(vid_images, './output/video.mp4')
     return lines
 
 
@@ -407,7 +456,7 @@ def bbox_overlap(bbox1, bbox2):
 
 
 def group_bboxes(bboxes, max_distance) -> list[list]:
-    result = []
+    result = list()
     rest_idxs = [i for i in range(len(bboxes))]
     while len(rest_idxs) > 0:
         close_idxs = [rest_idxs.pop()]
@@ -471,17 +520,16 @@ def main():
 
     ppm_file = read_ppm_file(image_path)
     write_ppm_file(f"./output/ppm_file.ppm", ppm_file)
-    orig = cv2.imread(image_path)
-    orig = ppm_file
+    # orig = cv2.imread(image_path)
+    orig = convert_to_rgb(ppm_file)
 
-    # ok = cv2.imwrite(f'{image_path[:image_path.rfind(".")]}.pbm', pbm(orig))
-    # cv2.imwrite(f'{image_path[:image_path.rfind(".")]}_noisy.pbm', noisify(invert(pbm(orig))))
-    # exit(0)
 
-    # print(f"{orig=}")
-    # print(f"{orig.shape=}")
+    def do_the_noise_invert_thing(): # BEWARE to not mess with ready to work files
+        ok = cv2.imwrite(f'{image_path[:image_path.rfind(".")]}.pbm', pbm(orig))
+        cv2.imwrite(f'{image_path[:image_path.rfind(".")]}_noisy.pbm', noisify(invert(pbm(orig))))
+
+    print(f"{orig.shape=}")
     print(f"{ppm_file.shape=}")
-    # print(f"{np.array_equal(orig, ppm_file)=}")
 
     image = ppm_file
     if len(image.shape) == 3:
@@ -528,7 +576,6 @@ def main():
 
     cv2.imwrite("./output/finished.png", finished_image)
     bboxes = find_connected_components_bbox(finished_image)
-    print(f"{bboxes=}")
     best_height = choose_best_height(bboxes)
     min_area = (best_height * best_height) / (2.5)
     bboxes = list(filter(lambda x: bbox_area(x) > min_area, bboxes))
@@ -538,16 +585,18 @@ def main():
         min_x, min_y, max_x, max_y = bbox
         area = bbox_area(bbox)
         words += 1
-        cv2.rectangle(orig, (min_y, min_x), (max_y, max_x), (0, 0, 255), 1)
+        rectangle(orig, (min_y, min_x), (max_y, max_x), (255, 0, 0), 1)
 
     list_of_bboxes = group_bboxes(bboxes, max_distance=best_height)
     for bbxs in list_of_bboxes:
         x, y, x2, y2 = enclosing_bbox(bbxs)
-        cv2.rectangle(orig, (y, x), (y2, x2), (0, 244, 55), 4)
+        rectangle(orig, (y, x), (y2, x2), (0, 244, 55), 4)
 
     print(
         f"# {words} words, {count_lines(bboxes, orig)} lines, {count_columns(bboxes)} columns, {len(list_of_bboxes)} blocks."
     )
+
+    write_ppm_file(f"./output/detected.ppm", orig)
     cv2.imwrite("./output/detected.png", orig)
 
 
