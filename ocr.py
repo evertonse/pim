@@ -5,24 +5,30 @@ from kernels import *
 import subprocess
 import numpy as np
 
+
 def create_video_from_images(images, output_video_path, fps=24):
     if len(images) == 0:
         return
     height, width, _ = images[0].shape
 
     ffmpeg_cmd = [
-        'ffmpeg',
-        '-y',  # Overwrite file if it already exists
-        '-f', 'rawvideo',
-        '-vcodec', 'rawvideo',
-        '-s', f'{width}x{height}',
-        '-pix_fmt', 'rgb24',
-        '-r', str(fps),  # FPS
-        '-i', '-',       # Read input from stdin
-        '-c:v', 'libx264',  # IDK
-        '-preset', 'medium', # IDK, something to do with enconding speed
-        '-crf', '23',  # lower value means better quality but larger file size
-        output_video_path
+        "ffmpeg",
+        "-y",  # Overwrite file if it already exists
+        "-f",
+        "rawvideo",
+        "-vcodec",
+        "rawvideo",
+        "-s", f"{width}x{height}",
+        "-pix_fmt",
+        "rgb24",
+        "-r", str(fps),  # FPS
+        "-i", "-",  # Read input from stdin
+        "-c:v",
+        "libx264",  # IDK
+        "-preset",
+        "medium",  # IDK, something to do with enconding speed
+        "-crf", "23",  # lower value means better quality but larger file size
+        output_video_path,
     ]
     ffmpeg_process = subprocess.Popen(ffmpeg_cmd, stdin=subprocess.PIPE)
     for numpy_image in images:
@@ -38,9 +44,10 @@ def convert_to_rgb(image):
     width = image.shape[1]
     for j in range(height):
         for i in range(width):
-            data.extend([image[j,i], image[j,i], image[j,i]])
+            data.extend([image[j, i], image[j, i], image[j, i]])
     result = np.array(data, dtype=np.uint8).reshape(height, width, 3)
     return result
+
 
 def write_ppm_file(filepath, image):
     height, width = image.shape[:2]
@@ -49,7 +56,7 @@ def write_ppm_file(filepath, image):
         f.write("P3\n")
         f.write("# ExCyber Power Style\n")
         f.write(f"{width} {height}\n")
-        f.write("255\n")
+        f.write("255\n") # Valor máximo
 
         for row in image:
             for pixel in row:
@@ -75,7 +82,6 @@ def read_ppm_file(filepath):
 
         width, height = map(int, line.strip().split())
 
-        # Read pixel data
         pixel_data = list()
         while line:
             line = (
@@ -86,7 +92,7 @@ def read_ppm_file(filepath):
             # Each pixel in is represented by a byte containing ASCII '1' or '0', representing black and white respectively. There are no fill bits at the end of a row.
             pixel_data.extend(map(lambda x: 255 if x == "0" else 0, line))
 
-    array = np.array(pixel_data,dtype=np.uint8).reshape(height, width)
+    array = np.array(pixel_data, dtype=np.uint8).reshape(height, width)
     return array
 
 
@@ -94,6 +100,7 @@ def pbm(image):
     image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     _, image = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
     return image
+
 
 def invert(image):
     image = cv2.bitwise_not(image)
@@ -110,16 +117,17 @@ def noisify(image):
                 noisy_image[i, j] = 0
     return noisy_image
 
+
 def rectangle(image, pt1, pt2, color, thickness=1):
     assert image.shape[-1] == len(color)
     x1, y1 = pt1
     x2, y2 = pt2
 
-    image[y1:y1+thickness, x1:x2+1] = color
-    image[y2:y2+thickness, x1:x2+1] = color
+    image[y1 : y1 + thickness, x1 : x2 + 1] = color
+    image[y2 : y2 + thickness, x1 : x2 + 1] = color
 
-    image[y1:y2+thickness, x1:x1+thickness] = color
-    image[y1:y2+thickness, x2:x2+thickness] = color
+    image[y1 : y2 + thickness, x1 : x1 + thickness] = color
+    image[y1 : y2 + thickness, x2 : x2 + thickness] = color
 
     return image
 
@@ -139,7 +147,7 @@ def closing(image, kernel, iterations=1):
 
 
 def median_blur(image, filter_size=3):
-    assert(len(image.shape) == 2)
+    assert len(image.shape) == 2
 
     convolved = image.copy()
     height = image.shape[0]
@@ -165,25 +173,26 @@ def median_blur(image, filter_size=3):
             convolved[y, x] = colors[(len(colors) // 2)]
     return convolved
 
-# erode = cv2.erode
+
+erode = cv2.erode
 
 
-def erode(image, kernel, iterations=1):
-    assert kernel.shape[0] % 2 != 0, f'{kernel.shape=}'
+def _erode(image, kernel, iterations=1):
+    assert kernel.shape[0] % 2 != 0, f"{kernel.shape=}"
 
     result = image.copy()
 
     height = image.shape[0]
-    width  = image.shape[1]
+    width = image.shape[1]
 
     kernel_height = kernel.shape[1]
-    kernel_width  = kernel.shape[0]
+    kernel_width = kernel.shape[0]
     for y in range(height):
         for x in range(width):
             all_good = True
             for j in range(kernel_height):
                 for i in range(kernel_width):
-                    i_offset = i - kernel_width  // 2
+                    i_offset = i - kernel_width // 2
                     j_offset = j - kernel_height // 2
                     color = 0
                     if (
@@ -196,22 +205,26 @@ def erode(image, kernel, iterations=1):
                     kernel_color = kernel[j, i]
                     if kernel_color > 0:
                         if color == 0:
-                            all_good = False 
+                            all_good = False
             if all_good:
                 result[y, x] = 255
             else:
                 result[y, x] = 0
     return result
 
-def dilate(image, kernel, iterations=1):
+
+dilate = cv2.dilate
+
+
+def _dilate(image, kernel, iterations=1):
     def internal_dilate(image, kernel):
-        assert kernel.shape[0] % 2 != 0, f'{kernel.shape=}'
+        assert kernel.shape[0] % 2 != 0, f"{kernel.shape=}"
         result = np.zeros_like(image)
         height = image.shape[0]
-        width  = image.shape[1]
+        width = image.shape[1]
         kernel_height = kernel.shape[1]
-        kernel_width  = kernel.shape[0]
-        kernel_width_delta = kernel_width  // 2
+        kernel_width = kernel.shape[0]
+        kernel_width_delta = kernel_width // 2
         kernel_height_delta = kernel_height // 2
         for y in range(height):
             for x in range(width):
@@ -366,6 +379,9 @@ def find_connected_components_bbox(image, min_area=0, connectivity=8):
     return bounding_boxes
 
 
+vid_images = list()
+
+
 def count_lines(bboxes, orig):
     if len(bboxes) == 0:
         return 0
@@ -382,7 +398,6 @@ def count_lines(bboxes, orig):
     prev1, _, prev2, _ = bboxes[0]
     # Iterate through the sorted bounding boxes starting from the second one
     xdiffs_bboxes = list()
-    vid_images = list()
     for bbox in bboxes[1:]:
         y1, _, y2, _ = bbox
         overlap = max(0, min(prev2, y2) - max(prev1, y1))
@@ -397,7 +412,6 @@ def count_lines(bboxes, orig):
         rectangle(vid_img, (0, y1), (orig.shape[0] - 1, y2), (0, 0, 255), 2)
         vid_images.append(vid_img)
 
-    create_video_from_images(vid_images, './output/video.mp4')
     return lines
 
 
@@ -501,7 +515,7 @@ def bbox_overlap(bbox1, bbox2):
         return False
 
 
-def group_bboxes(bboxes, max_distance) -> list[list]:
+def group_bboxes(bboxes, max_distance, image) -> list[list]:
     result = list()
     rest_idxs = [i for i in range(len(bboxes))]
     while len(rest_idxs) > 0:
@@ -517,6 +531,14 @@ def group_bboxes(bboxes, max_distance) -> list[list]:
                 rest_idxs.remove(r_idx)
                 bbox = enclosing_bbox([bbox, bboxes[r_idx]])
                 counter = 0
+
+                vid_img = image.copy()
+                x, y, x2, y2 = bbox
+                rectangle(vid_img, (y, x), (y2, x2), (0, 244, 55), 2)
+                vid_images.append(vid_img)
+
+        x, y, x2, y2 = bbox
+        rectangle(image, (y, x), (y2, x2), (0, 244, 55), 2)
         result.append([bboxes[i] for i in close_idxs])
     return result
 
@@ -556,23 +578,27 @@ def enclosing_bbox(bboxes):
 def main():
     # orig = cv2.imread("./assets/ocr/lorem_s12_c02_noise.pbm") # 583 words, 52 lines, 2 columns, 7 blocks.
     # orig = cv2.imread("./assets/ocr/extra/lorem_s16_c02.png") # 318 words, 39 lines, 2 columns, 4 blocks.
-    # orig = cv2.imread('./assets/ocr/lorem_s12_c03.pbm') # 557 words, 52 lines, 3 columns, 8 blocks.
     # (exibits wrong blocks because of heights) orig = cv2.imread("./assets/ocr/lorem_s12_c03_just.pbm")  # 557 words, 52 lines, 3 columns, 8 blocks.
-    # orig = cv2.imread("./assets/ocr/extra/arial_s14_c04_left.png")
+    image_path = "./assets/ocr/extra/arial_s14_c04_left.png"
 
+    image_path = (
+        "./assets/ocr/lorem_s12_c03.pbm"  # 557 words, 52 lines, 3 columns, 8 blocks.
+    )
     image_path = "./assets/ocr/extra/cascadia_code_s16_c02_center.png"
-    image_path = "./assets/ocr/extra/cascadia_code_s10_c02_right_bold.pbm" # 395 words, 42 lines, 2 columns, 5 blocks.
-    image_path = "./assets/ocr/extra/cascadia_code_s10_c02_right_bold_noisy.pbm" # 395 words, 42 lines, 2 columns, 5 blocks.
+    image_path = "./assets/ocr/extra/cascadia_code_s10_c02_right_bold.pbm"  # 395 words, 42 lines, 2 columns, 5 blocks.
+    image_path = "./assets/ocr/extra/cascadia_code_s10_c02_right_bold_noisy.pbm"  # 395 words, 42 lines, 2 columns, 5 blocks.
 
     ppm_file = read_ppm_file(image_path)
     write_ppm_file(f"./output/ppm_file.ppm", ppm_file)
     # orig = cv2.imread(image_path)
     orig = convert_to_rgb(ppm_file)
 
-
-    def do_the_noise_invert_thing(): # BEWARE to not mess with ready to work files
+    def do_the_noise_invert_thing():  # BEWARE to not mess with ready to work files
         ok = cv2.imwrite(f'{image_path[:image_path.rfind(".")]}.pbm', pbm(orig))
-        cv2.imwrite(f'{image_path[:image_path.rfind(".")]}_noisy.pbm', noisify(invert(pbm(orig))))
+        cv2.imwrite(
+            f'{image_path[:image_path.rfind(".")]}_noisy.pbm',
+            noisify(invert(pbm(orig))),
+        )
 
     print(f"{orig.shape=}")
     print(f"{ppm_file.shape=}")
@@ -632,17 +658,21 @@ def main():
         words += 1
         rectangle(orig, (min_y, min_x), (max_y, max_x), (255, 0, 0), 1)
 
-    list_of_bboxes = group_bboxes(bboxes, max_distance=best_height)
+    list_of_bboxes = group_bboxes(bboxes, max_distance=best_height, image=orig)
     for bbxs in list_of_bboxes:
         x, y, x2, y2 = enclosing_bbox(bbxs)
         rectangle(orig, (y, x), (y2, x2), (0, 244, 55), 4)
 
-    print(
-        f"# {words} words, {count_lines(bboxes, orig)} lines, {count_columns(bboxes)} columns, {len(list_of_bboxes)} blocks."
-    )
-
     write_ppm_file(f"./output/detected.ppm", orig)
-    cv2.imwrite("./output/detected.png", orig)
+
+    lines = count_lines(bboxes, orig)
+    columns = count_columns(bboxes)
+
+    create_video_from_images(vid_images, "./output/video.mp4")
+
+    print(
+        f"\n# {words} words, {lines} lines, {columns} columns, {len(list_of_bboxes)} blocks."
+    )
 
 
 if __name__ == "__main__":
