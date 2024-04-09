@@ -1,9 +1,9 @@
 import cv2
 import os
 import random
-import numpy as np
 from kernels import *
 import subprocess
+import numpy as np
 
 def create_video_from_images(images, output_video_path, fps=24):
     height, width, _ = images[0].shape
@@ -124,15 +124,15 @@ def rectangle(image, pt1, pt2, color, thickness=1):
 
 def im_open(image, kernel, iterations=1):
     for _ in range(iterations):
-        image = cv2.erode(image, kernel, iterations=1)
-        image = cv2.dilate(image, kernel, iterations=1)
+        image = erode(image, kernel, iterations=1)
+        image = dilate(image, kernel, iterations=1)
     return image
 
 
 def im_close(image, kernel, iterations=1):
     for _ in range(iterations):
-        image = cv2.dilate(image, kernel, iterations=1)
-        image = cv2.erode(image, kernel, iterations=1)
+        image = dilate(image, kernel, iterations=1)
+        image = erode(image, kernel, iterations=1)
     return image
 
 
@@ -163,34 +163,76 @@ def median_blur(image, filter_size=3):
             convolved[y, x] = colors[(len(colors) // 2)]
     return convolved
 
+# erode = cv2.erode
+
 
 def erode(image, kernel, iterations=1):
-    assert(len(kernel.shape) % 2 != 0)
+    assert kernel.shape[0] % 2 != 0, f'{kernel.shape=}'
 
     result = image.copy()
-    height = image.shape[1]
-    width = image.shape[0]
 
-    se_height = kernel.shape[1]
-    se_width  = kernel.shape[0]
-    for y in range(len()):
+    height = image.shape[0]
+    width  = image.shape[1]
+
+    kernel_height = kernel.shape[1]
+    kernel_width  = kernel.shape[0]
+    for y in range(height):
         for x in range(width):
-            colors = list()
-            for j in range(filter_size):
-                for i in range(filter_size):
-                    i_offset = i - se_width  // 2
-                    j_offset = j - se_height // 2
+            all_good = True
+            for j in range(kernel_height):
+                for i in range(kernel_width):
+                    i_offset = i - kernel_width  // 2
+                    j_offset = j - kernel_height // 2
+                    color = 0
                     if (
                         (x + i_offset) >= 0
                         and (x + i_offset) < width
                         and y + j_offset >= 0
                         and y + j_offset < height
                     ):
-                        color = image[x + i_offset, y + j_offset]
-                    else:
-                        color = 0
-                    se_color = kernel[i, j]
-            result[x, y] = colors[(len(colors) // 2)]
+                        color = image[y + j_offset, x + i_offset]
+                    kernel_color = kernel[j, i]
+                    if kernel_color > 0:
+                        if color == 0:
+                            all_good = False 
+            if all_good:
+                result[y, x] = 255
+            else:
+                result[y, x] = 0
+    return result
+
+def dilate(image, kernel, iterations=1):
+    assert kernel.shape[0] % 2 != 0, f'{kernel.shape=}'
+
+    result = image.copy()
+
+    height = image.shape[0]
+    width  = image.shape[1]
+
+    kernel_height = kernel.shape[1]
+    kernel_width  = kernel.shape[0]
+    for y in range(height):
+        for x in range(width):
+            all_good = False
+            for j in range(kernel_height):
+                for i in range(kernel_width):
+                    i_offset = i - kernel_width  // 2
+                    j_offset = j - kernel_height // 2
+                    color = 0
+                    if (
+                        (x + i_offset) >= 0
+                        and (x + i_offset) < width
+                        and y + j_offset >= 0
+                        and y + j_offset < height
+                    ):
+                        color = image[y + j_offset, x + i_offset]
+                    kernel_color = kernel[j, i]
+                    if kernel_color > 0 and color > 0:
+                        all_good = True
+            if all_good:
+                result[y, x] = 255
+            else:
+                result[y, x] = 0
     return result
 
 
@@ -225,7 +267,7 @@ def hit_or_miss(binary_image, structuring_element=None):
     cv2.imwrite("./output/inverted_image.png", inverted_image)
 
     # Perform erosion with the structuring element
-    erosion = cv2.erode(inverted_image, structuring_element, iterations=1)
+    erosion = erode(inverted_image, structuring_element, iterations=1)
     cv2.imwrite("./output/inverted_eroded.png", erosion)
 
     # Invert the result to get the hit-or-miss operation
@@ -541,15 +583,15 @@ def main():
         median_blur = cv2.medianBlur
         image = median_blur(image, 3)
     else:
-        image = cv2.erode(image, np.array([1, 1, 1]), iterations=1)
-        image = cv2.dilate(image, np.array([1, 1, 1]), iterations=1)
+        image = erode(image, np.array([1, 1, 1]), iterations=1)
+        image = dilate(image, np.array([1, 1, 1]), iterations=1)
 
     cv2.imwrite(f"./output/noise_free.png", image)
 
     _, image = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
     cv2.imwrite(f"./output/threshold.png", image)
     # Morphological operations
-    image = cv2.dilate(image, horz_kernel_5x5_truncated, iterations=2)
+    image = dilate(image, horz_kernel_5x5_truncated, iterations=2)
     cv2.imwrite(f"./output/dilate.png", image)
 
     # image = cv2.erode(image, horz_kernel_3x3, iterations=1)
@@ -560,13 +602,15 @@ def main():
     kernel = horz_kernel_3x3
     print(f"{kernel=}")
 
+    economy_mode = True
     image = im_close(image, kernel)
-    image = im_open(image, kernel)
-    cv2.imwrite("./output/open.png", image)
-    image = im_close(image, kernel)
-    cv2.imwrite(f"./output/close.png", image)
+    if not economy_mode:
+        image = im_open(image, kernel)
+        cv2.imwrite("./output/open.png", image)
+        image = im_close(image, kernel)
+        cv2.imwrite(f"./output/close.png", image)
 
-    image = cv2.dilate(
+    image = dilate(
         image,
         block_kernel,
         iterations=0,
