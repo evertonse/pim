@@ -9,7 +9,7 @@ def timer(func):
         start_time = timeit.default_timer()
         result = func(*args, **kwargs)
         end_time = timeit.default_timer()
-        print(f"Function {func.__name__} took {end_time - start_time} seconds to execute")
+        print(f"{func.__name__} took {end_time - start_time}s to execute.")
         return result
     return wrapper
 
@@ -19,7 +19,8 @@ def create_video_from_images(images, output_video_path, fps=24):
     height, width, _ = images[0].shape
 
     ffmpeg_cmd = [
-        "ffmpeg",
+        "ffmpeg", # "-hide_banner", # Hides the output thing
+        "-loglevel", "error",
         "-y",  # Overwrite file if it already exists
         "-f",
         "rawvideo",
@@ -37,12 +38,15 @@ def create_video_from_images(images, output_video_path, fps=24):
         "-crf", "23",  # lower value means better quality but larger file size
         output_video_path,
     ]
-    ffmpeg_process = subprocess.Popen(ffmpeg_cmd, stdin=subprocess.PIPE)
-    for img in images:
-        # Numpy array has tobytes(), but other implemeations might also have it
-        ffmpeg_process.stdin.write(img.tobytes()) 
-    ffmpeg_process.stdin.close()
-    ffmpeg_process.wait()
+    try: 
+        ffmpeg_process = subprocess.Popen(ffmpeg_cmd, stdin=subprocess.PIPE)
+        for img in images:
+            # Numpy array has tobytes(), but other implemeations might also have it
+            ffmpeg_process.stdin.write(img.tobytes()) 
+        ffmpeg_process.stdin.close()
+        ffmpeg_process.wait()
+    except: 
+        print("WARNING: Aparentemente `ffmpeg` não está no path desse shell. Instale com  `sudo apt install ffmpeg` se quiser ver o video gerado por este projeto.")
 
 
 def convert_to_rgb(image):
@@ -61,18 +65,28 @@ def write_ppm_file(filepath, image):
     height, width = image.shape[:2]
 
     with open(filepath, "w") as f:
-        f.write("P3\n")
-        f.write("# ExCyber Power Style\n")
-        f.write(f"{width} {height}\n")
-        f.write("255\n") # Valor máximo
-
-        for row in image:
-            for pixel in row:
-                if len(image.shape) == 3:
-                    f.write(f"{pixel[0]} {pixel[1]} {pixel[2]} ")
-                else:
-                    f.write(f"{pixel} {pixel} {pixel} ")
-            f.write("\n")
+        if len(image.shape) == 2:
+            image = np.ones_like(image)-image//255
+            f.write("P1\n")
+            f.write("# ExCyber Power Style\n")
+            f.write(f"{width} {height}\n")
+            for row in image:
+                line = "".join(str(pixel) for pixel in row)
+                # Important to go no longer than 70 chars
+                for i in range(0, len(line), 70):
+                    f.write(line[i:i+70])
+                    f.write("\n")
+        else:
+            f.write("P3\n")
+            f.write("# ExCyber Power Style\n")
+            f.write(f"{width} {height}\n")
+            f.write("255\n") # Max value
+            for row in image:
+                line = " ".join(f"{pixel[0]} {pixel[1]} {pixel[2]}" for pixel in row)
+                # Important to go no longer than 70 chars
+                for i in range(0, len(line), 70):
+                    f.write(line[i:i+70])
+                    f.write("\n")
 
 
 @timer
@@ -104,4 +118,6 @@ def read_ppm_file(filepath):
     array = np.array(pixel_data, dtype=np.uint8).reshape(height, width)
     return array
 
+def invert(image):
+    return np.ones_like(image)*255-image
 
