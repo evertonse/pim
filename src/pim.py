@@ -25,9 +25,9 @@ def noisify(image):
 
 def rectangle(image, pt1, pt2, color, thickness=1):
     try:
-        assert len(image.shape) == 3 and image.shape[-1] == len(color) # 3 dimensional
+        assert len(image.shape) == 3 and image.shape[-1] == len(color)  # 3 dimensional
     except:
-        assert isinstance(int(color), int) and len(image.shape) == 2 # 1 dimensional
+        assert isinstance(int(color), int) and len(image.shape) == 2  # 1 dimensional
     y1, x1 = pt1
     y2, x2 = pt2
 
@@ -55,9 +55,32 @@ def closing(image, kernel, iterations=1):
         image = erode(image, kernel, iterations=1)
     return image
 
+import numpy as np
 
 @timer
-def median_blur(image, filter_size=3):
+def fast_median_blur(image, filter_size=3):
+    assert len(image.shape) == 2
+
+    height = image.shape[0]
+    width = image.shape[1]
+
+    result = image.copy()
+
+    for y in range(height-filter_size):
+        for x in range(width-filter_size):
+            # Get only the part that we care about
+            region = image[y:y+filter_size, x:x+filter_size]
+            # transform in a 1d array
+            values = region.flatten()
+            values.sort()
+            median_value = values[len(values) // 2]
+            result[y, x] = median_value
+
+    return result
+
+
+@timer
+def understandable_median_blur(image, filter_size=3):
     assert len(image.shape) == 2
 
     convolved = image.copy()
@@ -85,8 +108,8 @@ def median_blur(image, filter_size=3):
     return convolved
 
 
-@timer
-def erode(image, kernel, iterations=1):
+@timer # Note Used
+def understandable_erode(image, kernel):
     assert kernel.shape[0] % 2 != 0, f"{kernel.shape=}"
 
     result = image.copy()
@@ -121,10 +144,34 @@ def erode(image, kernel, iterations=1):
                 result[y, x] = 0
     return result
 
+def fast_erode(image, kernel):
+    height, width = image.shape
+    kernel_height, kernel_width = kernel.shape
+
+    kernel_width_delta = kernel_width // 2
+    kernel_height_delta = kernel_height // 2
+
+    # We pad by the kernel delta, top, bottom, left and right
+    padded_image = pad(
+        image,
+        kernel_height_delta,
+        kernel_height_delta,
+        kernel_width_delta,
+        kernel_width_delta,
+    )
+
+    eroded = np.ones(image.shape) * 255
+    for j in range(kernel_height):
+        for i in range(kernel_width):
+            if kernel[j, i] == 1:
+                eroded = np.minimum(
+                    eroded, padded_image[j : j + height, i : i + width]
+                )
+
+    return eroded
 
 @timer
 def understandable_dilate(image, kernel, iterations=1):
-    assert kernel.shape[0] % 2 != 0, f"{kernel.shape=}"
     result = np.zeros(image.shape)
     height = image.shape[0]
     width = image.shape[1]
@@ -161,45 +208,110 @@ def understandable_dilate(image, kernel, iterations=1):
     return result
 
 
-@timer
-def fast_dilate(image, kernel):
-    result = image.copy()
-    height = image.shape[0]
-    width = image.shape[1]
-    kernel_height = kernel.shape[1]
-    kernel_width = kernel.shape[0]
+def pad(image, left, right, top, bottom):
+    assert len(image.shape) == 2, "Padding only works for gray_scale images right now."
+    return np.pad(
+        image, ((top, bottom), (left, right)), mode="constant", constant_values=0
+    )
+
+
+@timer # A little bit wrong but fast
+def fast_dilate2(image, kernel, iterations=1):
+    height, width = image.shape
+    kernel_height, kernel_width = kernel.shape
+
     kernel_width_delta = kernel_width // 2
     kernel_height_delta = kernel_height // 2
 
-    y = kernel_height_delta - 1
-    for row in image[kernel_height_delta : -(1 + kernel_height_delta)]:
-        y += 1
-        x = kernel_width_delta - 1
-        for pixel in row[kernel_width_delta : -1 - kernel_width_delta]:
-            x += 1
-            all_good = False
-            j = -1
-            for krow in kernel:
-                j += 1
-                i = -1
-                for kcolor in krow:
-                    i += 1
-                    i_offset = i - kernel_width_delta
-                    j_offset = j - kernel_height_delta
-                    color = image[y + j_offset, x + i_offset]
-                    if int(kcolor) * int(color):
-                        all_good = True
-                        break
-            if not all_good:
-                result[y, x] = 0
+    # We pad by the kernel delta, top, bottom, left and right
+    padded_image = pad(
+        image,
+        kernel_height_delta,
+        kernel_height_delta,
+        kernel_width_delta,
+        kernel_width_delta,
+    )
+
+    dilated = np.zeros(image.shape)
+    for j in range(kernel_height):
+        for i in range(kernel_width):
+            if kernel[j, i] == 1:
+                dilated = np.maximum(
+                    dilated, padded_image[j : j + height, i : i + width]
+                )
+
+    return dilated
+
+
+@timer
+def fast_dilate(image, kernel, iterations=1):
+    assert kernel.shape[0] % 2 != 0, f"{kernel.shape=}"
+
+    result = np.zeros(image.shape, dtype=np.uint8)
+    height = image.shape[0]
+    width = image.shape[1]
+
+    kernel_height = kernel.shape[0]
+    kernel_width = kernel.shape[1]
+
+    kernel_width_delta = kernel_width // 2
+    kernel_height_delta = kernel_height // 2
+
+    image = pad(
+        image,
+        kernel_height_delta,
+        kernel_height_delta,
+        kernel_width_delta,
+        kernel_width_delta,
+    )
+
+    
+    for y in range(kernel_height_delta, height):
+        for x in range(kernel_width_delta,width):
+            sub_result = kernel * image[y-kernel_height_delta: y+kernel_height_delta+1,x-kernel_width_delta: x+kernel_width_delta+1]
+            result[y, x] = sub_result.max()
+
+    assert tuple(result.shape) == (height, width)
     return result
 
 
 def dilate(image, kernel, iterations=1):
     assert kernel.shape[0] % 2 != 0, f"{kernel.shape=}"
+    # Professora Bia, aqui eu disponho diferentes implementações de dilatação
+    # understandable_dilate é o mais lento que tenta ser o mais entendivel possivel.
+    # Ja fast_dilate2 é bem mais rapido, porém usa a função `maximum` da estrutura de dados matrix do  numpy.
+    # é uma função que como o nome diz pega o maximo entre valores, mas funciona para matrix.
+    # Eu dispus dessa maneira pra mostra que sei fazer todas as diferentes implementações,
+    # mas pra ficar mais rapido e interativo é usado o fast_dilate2.
+    # NOTE: Qualquer uma dessas implementações funciona para os propositos deste trabalho
+    choice = (understandable_dilate, fast_dilate, fast_dilate2)[2]
+    
     for _ in range(iterations):
-        image = understandable_dilate(image, kernel)
+        image = choice(image, kernel)
     return image
+
+def erode(image, kernel, iterations=1):
+    # Mesma coisa do `dilate` e `median_blur`
+    choice = (understandable_erode, fast_erode)[1]
+    
+    for _ in range(iterations):
+        image = choice(imagat, kernel)
+    return image
+
+def median_blur(image, filter_size, iterations=1):
+    assert filter_size % 2 != 0, f"{kernel.shape=}"
+    # Professora Bia, aqui ocorre o mesmo que na função `dilate`, tenho duas implementaões
+    # que funcionam perfeitamente. Na versão fast, uso o sort do numpy e faço um padding na imagem
+    # Novamente, só para deixar claro que é só uma maneira de contornar o sort das litas
+    # lentas do python, a diferença é enorme. 
+    # Tanto no calo do `dilate` como aqui no `median_blur` o algoritmo continua sendo implementado e entendido pelo grupo,
+    # já a versões `fast` usam funções simples do numpy muito similares as do python, mas feito na matrix inteira :).
+    choice = (understandable_median_blur, fast_median_blur)[1]
+    
+    for _ in range(iterations):
+        image = choice(image, filter_size)
+    return image
+
 
 
 def bbox_area(bbox):
@@ -222,7 +334,6 @@ def choose_best_height(bboxes, outlier_constant=0.5):
     # Calculate the median height
     heights.sort()
     median_height = heights[len(heights) // 2]
-    print(f"{heights=}")
 
     # Filter out outliers
     filtered_heights = list()
@@ -231,7 +342,6 @@ def choose_best_height(bboxes, outlier_constant=0.5):
         if dh < outlier_constant * median_height:
             filtered_heights.append(height)
     filtered_heights.sort()
-    print(f"{filtered_heights=}")
 
     if len(filtered_heights) % 2 == 0:
         median_height = (
@@ -241,9 +351,12 @@ def choose_best_height(bboxes, outlier_constant=0.5):
     else:
         median_height = filtered_heights[len(filtered_heights) // 2]
     mean_height = sum(filtered_heights) / len(filtered_heights)
+
     print(f"{mean_height=}")
-    return max(median_height, filtered_heights[-1] / 2, round(mean_height))
-    # return median_height
+    print(f"{median_height=}")
+    print(f"max_height={filtered_heights[-1]}")
+    print(f"min_height={filtered_heights[0]}")
+    return median_height
 
 
 @timer
@@ -355,17 +468,17 @@ def distance(bbox1, bbox2):
 
     min_distance = float("inf")
 
-    l1, t1, r1, b1 = bbox1
-    l2, t2, r2, b2 = bbox2
-    assert l1 < r1 and t1 < b1
-    assert l2 < r2 and t2 < b2
+    # top, left, bottom, right, top is physically top, but has less value than b
+    t1, l1, b1, r1 = bbox1
+    t2, l2, b2, r2 = bbox2
+
+    assert l1 <= r1 and t1 <= b1, f"{bbox1=}"
+    assert l2 <= r2 and t2 <= b2, f"{bbox2=}"
 
     overlap_y = min(b1, b2) - max(t1, t2)
     overlap_x = min(r1, r2) - max(l1, l2)
     if overlap_y > 0:
-        if overlap_x > 0:
-            print(f"{bbox1,bbox2=}")
-            exit(1)
+        assert not overlap_x > 0
         l1_dist = min(abs(l1 - l2), abs(l1 - r2))
         r1_dist = min(abs(r1 - l2), abs(r1 - r2))
         dist = min(r1_dist, l1_dist)
@@ -405,18 +518,40 @@ def bbox_overlap(bbox1, bbox2):
     """
     Check if two bounding boxes overlap.
     """
-    left1, top1, right1, bottom1 = bbox1
-    left2, top2, right2, bottom2 = bbox2
+    t1, l1, b1, r1 = bbox1  # top, left, bottom, right
+    t2, l2, b2, r2 = bbox2
 
-    overlap_left = max(left1, left2)
-    overlap_top = max(top1, top2)
-    overlap_right = min(right1, right2)
-    overlap_bottom = min(bottom1, bottom2)
+    overlap_left = max(l1, l2)
+    overlap_top = max(t1, t2)
+    overlap_right = min(r1, r2)
+    overlap_bottom = min(b1, b2)
 
     # If the overlap area is non-negative, the bounding boxes overlap
     if overlap_right > overlap_left and overlap_bottom > overlap_top:
-        overlap_y = min(bottom1, bottom2) - max(top1, top2)
-        overlap_x = min(right1, right2) - max(left1, left2)
+        overlap_y = min(b1, b2) - max(t1, t2)
+        overlap_x = min(r1, r2) - max(l1, l2)
+        assert overlap_y > 0 and overlap_x > 0
+        return True
+    else:
+        return False
+
+
+def _bbox_overlap(bbox1, bbox2):
+    """
+    Check if two bounding boxes overlap.
+    """
+    b1, l1, t1, r1 = bbox1  # bottom, left, top, right
+    b2, l2, t2, r2 = bbox2
+
+    overlap_left = max(l1, l2)
+    overlap_top = max(t1, t2)
+    overlap_right = min(r1, r2)
+    overlap_bottom = min(b1, b2)
+
+    # If the overlap area is non-negative, the bounding boxes overlap
+    if overlap_right > overlap_left and overlap_bottom > overlap_top:
+        overlap_y = min(b1, b2) - max(t1, t2)
+        overlap_x = min(r1, r2) - max(l1, l2)
         assert overlap_y > 0 and overlap_x > 0
         return True
     else:
@@ -439,7 +574,7 @@ def group_bboxes(bboxes, max_distance, image) -> list[list]:
             r_idx = rest_idxs[counter]
             counter += 1
             dist = distance(bbox, bboxes[r_idx])
-            if dist < max_distance or bbox_overlap(bbox, bboxes[r_idx]):
+            if (dist < max_distance) or bbox_overlap(bbox, bboxes[r_idx]):
                 close_idxs.append(r_idx)
                 rest_idxs.remove(r_idx)
                 bbox = enclosing_bbox([bbox, bboxes[r_idx]])
@@ -475,23 +610,16 @@ def enclosing_bbox(bboxes):
     if not bboxes:
         return None
 
-    # Initialize min and max coordinates with the first bounding box
-    x_min, y_min, x_max, y_max = bboxes[0]
+    # top is closer to 0 than bottom, left is closer to 0 than right
+    t, l, b, r = bboxes[0]
 
     # Iterate through the rest of the bounding boxes to update min and max coordinates
     for bbox in bboxes[1:]:
-        x_min = min(x_min, bbox[0])
-        y_min = min(y_min, bbox[1])
-        x_max = max(x_max, bbox[2])
-        y_max = max(y_max, bbox[3])
+        t = min(t, bbox[0])
+        l = min(l, bbox[1])
+        b = max(b, bbox[2])
+        r = max(r, bbox[3])
 
     # Return the enclosing bounding box
-    return (x_min, y_min, x_max, y_max)
+    return t, l, b, r
 
-
-GO_FAST = True
-if GO_FAST:
-    import cv2
-    median_blur = cv2.medianBlur
-    dilate = cv2.dilate
-    erode = cv2.erode

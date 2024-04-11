@@ -1,0 +1,37 @@
+1,2c1,2
+< read_ppm_file took 0.3053s to execute.
+< write_ppm_file took 0.5580s to execute.
+---
+> read_ppm_file took 0.3173s to execute.
+> write_ppm_file took 0.5523s to execute.
+5,11c5,11
+< median_blur took 11.1553s to execute.
+< write_ppm_file took 0.6933s to execute.
+< write_ppm_file took 0.6973s to execute.
+< fast_dilate took 9.2686s to execute.
+< fast_dilate took 9.0272s to execute.
+< fast_dilate took 8.7657s to execute.
+< write_ppm_file took 0.5830s to execute.
+---
+> median_blur took 11.2870s to execute.
+> write_ppm_file took 0.5658s to execute.
+> write_ppm_file took 0.5734s to execute.
+> understandable_dilate took 16.6106s to execute.
+> understandable_dilate took 16.4667s to execute.
+> understandable_dilate took 16.0590s to execute.
+> write_ppm_file took 0.5485s to execute.
+15,16c15,16
+< write_ppm_file took 0.5311s to execute.
+< find_connected_components_bboxes took 3.8458s to execute.
+---
+> write_ppm_file took 0.5511s to execute.
+> find_connected_components_bboxes took 3.6939s to execute.
+28,30c28,31
+< group_bboxes took 2.1868s to execute.
+< write_ppm_file took 3.0331s to execute.
+< create_video_from_images took 12.9182s to execute.
+---
+> group_bboxes took 2.1615s to execute.
+> nblocks=4
+> write_ppm_file took 2.9786s to execute.
+> create_video_from_images took 10.7785s to execute.

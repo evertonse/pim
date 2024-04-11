@@ -1,0 +1,29 @@
+read_ppm_file took 0.3203s to execute.
+write_ppm_file took 0.5816s to execute.
+ppm_file.shape=(2339, 1654)
+fast_median_blur took 5.2377s to execute.
+write_ppm_file took 0.7552s to execute.
+write_ppm_file took 0.6903s to execute.
+fast_dilate took 14.9908s to execute.
+fast_dilate took 12.7456s to execute.
+fast_dilate took 12.4117s to execute.
+write_ppm_file took 0.5695s to execute.
+write_ppm_file took 0.6327s to execute.
+find_connected_components_bboxes took 10.2192s to execute.
+mean_height=31.44514106583072
+median_height=31
+max_height=41
+min_height=23
+choose_best_height took 0.0003s to execute.
+mean_height=31.44514106583072
+median_height=31
+max_height=41
+min_height=23
+choose_best_height took 0.0001s to execute.
+min_area, best_height=(384.4, 31)
+group_bboxes took 2.1784s to execute.
+write_ppm_file took 3.5691s to execute.
+create_video_from_images took 14.6702s to execute.
+
+# 319 words, 39 lines, 2 columns, 4 blocks.
+main took 81.7550s to execute.
