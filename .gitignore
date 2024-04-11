@@ -41,6 +41,10 @@
 *.su
 *.idb
 
+# Logs
+log*
+log.**
+
 
 # Kernel Module Compile Results
 *.mod*

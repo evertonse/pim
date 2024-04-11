@@ -7,7 +7,6 @@ from utils import *
 
 vid_images = list()
 
-
 def invert(image):
     return np.ones(image.shape) * 255 - image
 
@@ -55,7 +54,6 @@ def closing(image, kernel, iterations=1):
         image = erode(image, kernel, iterations=1)
     return image
 
-import numpy as np
 
 @timer
 def fast_median_blur(image, filter_size=3):
@@ -108,7 +106,7 @@ def understandable_median_blur(image, filter_size=3):
     return convolved
 
 
-@timer # Note Used
+@timer 
 def understandable_erode(image, kernel):
     assert kernel.shape[0] % 2 != 0, f"{kernel.shape=}"
 
@@ -164,10 +162,10 @@ def fast_erode(image, kernel):
     for j in range(kernel_height):
         for i in range(kernel_width):
             if kernel[j, i] == 1:
+                shifted_sub_image = padded_image[j : j + height, i : i + width]
                 eroded = np.minimum(
-                    eroded, padded_image[j : j + height, i : i + width]
+                    eroded, shifted_sub_image
                 )
-
     return eroded
 
 @timer
@@ -215,8 +213,9 @@ def pad(image, left, right, top, bottom):
     )
 
 
-@timer # A little bit wrong but fast
-def fast_dilate2(image, kernel, iterations=1):
+@timer 
+def fast_dilate2(image, kernel):
+    global counter 
     height, width = image.shape
     kernel_height, kernel_width = kernel.shape
 
@@ -232,19 +231,20 @@ def fast_dilate2(image, kernel, iterations=1):
         kernel_width_delta,
     )
 
-    dilated = np.zeros(image.shape)
+    dilated = np.zeros(image.shape, dtype=np.uint8)
     for j in range(kernel_height):
         for i in range(kernel_width):
             if kernel[j, i] == 1:
+                shifted_sub_image = padded_image[j : j + height, i : i + width]
                 dilated = np.maximum(
-                    dilated, padded_image[j : j + height, i : i + width]
+                    dilated, shifted_sub_image
                 )
 
     return dilated
 
 
 @timer
-def fast_dilate(image, kernel, iterations=1):
+def fast_dilate(image, kernel):
     assert kernel.shape[0] % 2 != 0, f"{kernel.shape=}"
 
     result = np.zeros(image.shape, dtype=np.uint8)
@@ -295,7 +295,7 @@ def erode(image, kernel, iterations=1):
     choice = (understandable_erode, fast_erode)[1]
     
     for _ in range(iterations):
-        image = choice(imagat, kernel)
+        image = choice(image, kernel)
     return image
 
 def median_blur(image, filter_size, iterations=1):
@@ -352,10 +352,6 @@ def choose_best_height(bboxes, outlier_constant=0.5):
         median_height = filtered_heights[len(filtered_heights) // 2]
     mean_height = sum(filtered_heights) / len(filtered_heights)
 
-    print(f"{mean_height=}")
-    print(f"{median_height=}")
-    print(f"max_height={filtered_heights[-1]}")
-    print(f"min_height={filtered_heights[0]}")
     return median_height
 
 
@@ -413,7 +409,6 @@ def count_lines(bboxes, orig):
     for bbox in bboxes[1:]:
         y1, _, y2, _ = bbox
         overlap = max(0, min(prev2, y2) - max(prev1, y1))
-        # print(f"{overlap=}")
         if overlap > abs(prev1 - prev2) / 100:
             continue
         lines += 1
@@ -444,9 +439,9 @@ def count_columns(bboxes, orig):
             num_columns += 1
             rectangle(
                 vid_img,
-                (int(left) - 1, orig.shape[0] - 2),
-                (int(left), 0),
-                (0, 25, 25),
+                (0, left),
+                (orig.shape[0]-2, left+1),
+                (150, 160, 180),
                 2,
             )
             vid_images.append(vid_img)
@@ -455,6 +450,7 @@ def count_columns(bboxes, orig):
         if max_right < right:
             max_right = right
 
+    vid_images.append(vid_img)
     return num_columns
 
 

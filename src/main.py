@@ -1,42 +1,24 @@
-import os
-import random
-import subprocess
+import sys
 
 import pim # My (P)rocessing (IM)age functions
 from utils import *
 from kernels import *
 
 # If any of these are true, the algorithm works for more cases
-INCREASE_ACCURACY_BY_CLOSING = False
-INCREASE_ACCURACY_BY_BIGGER_KERNEL = False
+INCREASE_ACCURACY_BY_CLOSING = not False
+INCREASE_ACCURACY_BY_BIGGER_KERNEL = not False
 
-
-def pbm(image):
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    _, image = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-    return image
+# Just a mode for developing
+DEBUG = not False
 
 
 @timer
-def main():
-    # image_path = "./assets/ocr/lorem_s12_c02_noise.pbm" # 583 words, 52 lines, 2 columns, 7 blocks.
-    # (exibits wrong blocks because of heights) image_path = "./assets/ocr/lorem_s12_c03_just.pbm"  # 557 words, 52 lines, 3 columns, 8 blocks.
-    image_path = "./assets/ocr/extra/arial_s14_c04_left.png"
-
-    image_path = (
-        "./assets/ocr/lorem_s12_c03.pbm"  # 557 words, 52 lines, 3 columns, 8 blocks.
-    )
-    image_path = "./assets/ocr/extra/cascadia_code_s16_c02_center.png"
-    image_path = "./assets/ocr/extra/cascadia_code_s10_c02_right_bold.pbm"  # 395 words, 42 lines, 2 columns, 5 blocks.
-    image_path = "./assets/ocr/extra/arial_s18_c04_left.pbm" 
-    image_path = "./assets/ocr/extra/arial_s13_c02_left_space.pbm" #  132 words.
-    image_path = "./assets/ocr/extra/cascadia_code_s10_c02_right_bold_noisy.pbm"  # 395 words, 42 lines, 2 columns, 5 blocks.
-    image_path = "./assets/ocr/extra/lorem_s16_c02.pbm" # 318 words, 39 lines, 2 columns, 4 blocks.
-
+def main(image_path):
     ppm_file = pim.read_ppm_file(image_path)
     pim.write_ppm_file(f"./output/ppm_file.ppm", ppm_file)
     orig = pim.convert_to_rgb(ppm_file)
-    print(f"{ppm_file.shape=}")
+
+    print(f"Image is {ppm_file.shape[1]} width and {ppm_file.shape[0]} height.")
 
     def do_the_noise_invert_thing():  # BEWARE to not mess with ready to work files
         pim.write_ppm_file(f'{image_path[:image_path.rfind(".")]}.pbm', pim.pbm(orig))
@@ -64,6 +46,7 @@ def main():
         # Use a smaller kernel to be faster, but do one more iteration
         image = pim.dilate(image, horz_kernel_3x3, iterations=3)
     pim.write_ppm_file("./output/dilate.ppm", image)
+
 
     # kernel = create_text_kernel(5)
     # kernel = create_circular_kernel(3)
@@ -93,10 +76,9 @@ def main():
 
     # Filter it to eliminate punctuation bbox, and keep only words
     words_bboxes = list(filter(lambda x: pim.bbox_area(x) > min_area, bboxes))
-    best_height = pim.choose_best_height(words_bboxes)
-    min_area = (best_height * best_height) / (2.5)
 
-    print(f"{min_area, best_height=}")
+    print(f"{min_area=}")
+    print(f"height={best_height}")
     for bbox in words_bboxes:
         min_y, min_x, max_y, max_x = bbox
         pim.rectangle(orig, (min_y, min_x), (max_y, max_x), (255, 0, 0), 2)
@@ -128,4 +110,25 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    image_path = ''
+    if not DEBUG:
+        if len(sys.argv) < 2:
+            print('usage: python src/main.py [path/to/image.pbm]')
+            exit(1)
+        image_path = sys.argv[1]
+    else:
+        # image_path = "./assets/ocr/lorem_s12_c02_noise.pbm" # 583 words, 52 lines, 2 columns, 7 blocks.
+        # (exibits wrong blocks because of heights) image_path = "./assets/ocr/lorem_s12_c03_just.pbm"  # 557 words, 52 lines, 3 columns, 8 blocks.
+        image_path = "./assets/ocr/extra/arial_s14_c04_left.png"
+
+        image_path = (
+            "./assets/ocr/lorem_s12_c03.pbm"  # 557 words, 52 lines, 3 columns, 8 blocks.
+        )
+        image_path = "./assets/ocr/extra/cascadia_code_s16_c02_center.png"
+        image_path = "./assets/ocr/extra/cascadia_code_s10_c02_right_bold.pbm"  # 395 words, 42 lines, 2 columns, 5 blocks.
+        image_path = "./assets/ocr/extra/arial_s18_c04_left.pbm" 
+        image_path = "./assets/ocr/extra/arial_s13_c02_left_space.pbm" #  132 words.
+        image_path = "./assets/ocr/extra/cascadia_code_s10_c02_right_bold_noisy.pbm"  # 395 words, 42 lines, 2 columns, 5 blocks.
+        image_path = "./assets/ocr/extra/lorem_s16_c02.pbm" # 318 words, 39 lines, 2 columns, 4 blocks.
+
+    main(image_path)
