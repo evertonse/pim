@@ -8,7 +8,6 @@ except:
 
 
 
-
 def timer(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
@@ -26,7 +25,7 @@ def create_video_from_images(images, output_video_path, fps=24):
    
     if len(images) == 0:
         return
-    height, width, _ = images[0].shape
+    height, width = images[0].shape[:2]
 
     ffmpeg_cmd = [
         "ffmpeg",  # "-hide_banner", # Hides the output thing
@@ -57,6 +56,8 @@ def create_video_from_images(images, output_video_path, fps=24):
         import subprocess
         ffmpeg_process = subprocess.Popen(ffmpeg_cmd, stdin=subprocess.PIPE)
         for img in images:
+            if len(img.shape) == 2 :
+                img = convert_to_rgb(img)
             # Numpy array has tobytes(), but other implemeations might also have it
             ffmpeg_process.stdin.write(img.tobytes())
         ffmpeg_process.stdin.close()

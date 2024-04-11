@@ -9,7 +9,7 @@ except:
 from kernels import *
 from utils import *
 
-vid_images = list()
+video_frames = list()
 
 def invert(image):
     return np.ones(image.shape) * 255 - image
@@ -400,7 +400,7 @@ def find_connected_components_bboxes(image, min_area=0, connectivity=8):
 
 
 def count_lines(bboxes, orig):
-    global vid_images
+    global video_frames
     if len(bboxes) == 0:
         return 0
 
@@ -421,7 +421,7 @@ def count_lines(bboxes, orig):
 
         vid_img = orig.copy()
         rectangle(vid_img, (y1, 0), (y2, orig.shape[1] - 1), (0, 0, 255), 2)
-        vid_images.append(vid_img)
+        video_frames.append(vid_img)
 
     return lines
 
@@ -433,7 +433,7 @@ def count_columns(bboxes, orig):
     num_columns = 0
     max_right = float("-inf")
 
-    vid_img = orig.copy()
+    vid_img = orig # Modify in place to show in the end
     for bbox in sorted_bboxes:
         _, left, _, right = bbox
 
@@ -445,16 +445,16 @@ def count_columns(bboxes, orig):
                 vid_img,
                 (0, left),
                 (orig.shape[0]-2, left+1),
-                (150, 160, 180),
+                (255, 255, 0),
                 2,
             )
-            vid_images.append(vid_img)
+            video_frames.append(vid_img)
 
         # Update current rightmost x-coordinate
         if max_right < right:
             max_right = right
 
-    vid_images.append(vid_img)
+    video_frames.append(vid_img)
     return num_columns
 
 
@@ -583,7 +583,7 @@ def group_bboxes(bboxes, max_distance, image) -> list[list]:
                 vid_img = image.copy()
                 y, x, y2, x2 = bbox
                 rectangle(vid_img, (y, x), (y2, x2), (0, 244, 55), 2)
-                vid_images.append(vid_img)
+                video_frames.append(vid_img)
 
         y, x, y2, x2 = bbox
         rectangle(image, (y, x), (y2, x2), (0, 244, 55), 2)
