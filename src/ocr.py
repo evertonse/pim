@@ -1,8 +1,11 @@
-import cv2
 import os
 import random
 import subprocess
-import numpy as np
+try:
+    import numpy as np
+except:
+    print('WARNING: Aparentemente não tem numpy instalado. Usado para estrutura de matriz rápidas. Instale com `pip install numpy`')
+    exit(1)
 
 
 import pim

@@ -8,17 +8,24 @@ from kernels import *
 INCREASE_ACCURACY_BY_CLOSING = not False
 INCREASE_ACCURACY_BY_BIGGER_KERNEL = not False
 
+# "Grupo 13"
+# 	Usuário Off-Line no SIGAA ÉVERTON SANTOS DE ANDRADE JUNIOR
+# Curso: CIÊNCIA DA COMPUTAÇÃO
+# Matrícula: 202100011379
+# Usuário: evertonse
+# E-mail:  evertonse.junior@gmail.com
+GROUP_NUMBER = 13
+
 # Just a mode for developing
 DEBUG = not False
 
 
-@timer
 def main(image_path):
     ppm_file = pim.read_ppm_file(image_path)
     pim.write_ppm_file(f"./output/ppm_file.ppm", ppm_file)
     orig = pim.convert_to_rgb(ppm_file)
 
-    print(f"Image is {ppm_file.shape[1]} width and {ppm_file.shape[0]} height.")
+    print(f"INFO: Image is {ppm_file.shape[1]}x{ppm_file.shape[0]} (width x height).")
 
     def do_the_noise_invert_thing():  # BEWARE to not mess with ready to work files
         pim.write_ppm_file(f'{image_path[:image_path.rfind(".")]}.pbm', pim.pbm(orig))
@@ -77,8 +84,6 @@ def main(image_path):
     # Filter it to eliminate punctuation bbox, and keep only words
     words_bboxes = list(filter(lambda x: pim.bbox_area(x) > min_area, bboxes))
 
-    print(f"{min_area=}")
-    print(f"height={best_height}")
     for bbox in words_bboxes:
         min_y, min_x, max_y, max_x = bbox
         pim.rectangle(orig, (min_y, min_x), (max_y, max_x), (255, 0, 0), 2)
@@ -105,30 +110,28 @@ def main(image_path):
             pim.write_ppm_file(f'./output/words/word_{y}x{x}.ppm', ppm_file[y:y2, x:x2])
 
     print(
-        f"\n# {nwords} words, {nlines} lines, {ncolumns} columns, {nblocks} blocks."
+        f"\n> {nwords} words, {nlines} lines, {ncolumns} columns, {nblocks} blocks."
     )
 
 
+
 if __name__ == "__main__":
-    image_path = ''
-    if not DEBUG:
-        if len(sys.argv) < 2:
-            print('usage: python src/main.py [path/to/image.pbm]')
-            exit(1)
+    image_path = "./assets/ocr/extra/arial_s14_c04_left.png"
+
+    image_path = (
+        "./assets/ocr/lorem_s12_c03.pbm"  # 557 words, 52 lines, 3 columns, 8 blocks.
+    )
+    image_path = "./assets/ocr/extra/cascadia_code_s16_c02_center.png"
+    image_path = "./assets/ocr/extra/cascadia_code_s10_c02_right_bold.pbm"  # 395 words, 42 lines, 2 columns, 5 blocks.
+    image_path = "./assets/ocr/extra/arial_s18_c04_left.pbm" 
+    image_path = "./assets/ocr/extra/arial_s13_c02_left_space.pbm" #  132 words.
+    image_path = "./assets/ocr/extra/cascadia_code_s10_c02_right_bold_noisy.pbm"  # 395 words, 42 lines, 2 columns, 5 blocks.
+    image_path = "./assets/ocr/extra/lorem_s16_c02.pbm" # 318 words, 39 lines, 2 columns, 4 blocks.
+    # image_path = "./assets/ocr/lorem_s12_c02_noise.pbm" # 583 words, 52 lines, 2 columns, 7 blocks.
+    # (exibits wrong blocks because of heights) image_path = "./assets/ocr/lorem_s12_c03_just.pbm"  # 557 words, 52 lines, 3 columns, 8 blocks.
+    if len(sys.argv) < 2:
+        print('USAGE: python3 src/main.py [path/to/image.pbm]')
+        print(f'INFO: using default image path `{image_path}`\n')
+    else: 
         image_path = sys.argv[1]
-    else:
-        # image_path = "./assets/ocr/lorem_s12_c02_noise.pbm" # 583 words, 52 lines, 2 columns, 7 blocks.
-        # (exibits wrong blocks because of heights) image_path = "./assets/ocr/lorem_s12_c03_just.pbm"  # 557 words, 52 lines, 3 columns, 8 blocks.
-        image_path = "./assets/ocr/extra/arial_s14_c04_left.png"
-
-        image_path = (
-            "./assets/ocr/lorem_s12_c03.pbm"  # 557 words, 52 lines, 3 columns, 8 blocks.
-        )
-        image_path = "./assets/ocr/extra/cascadia_code_s16_c02_center.png"
-        image_path = "./assets/ocr/extra/cascadia_code_s10_c02_right_bold.pbm"  # 395 words, 42 lines, 2 columns, 5 blocks.
-        image_path = "./assets/ocr/extra/arial_s18_c04_left.pbm" 
-        image_path = "./assets/ocr/extra/arial_s13_c02_left_space.pbm" #  132 words.
-        image_path = "./assets/ocr/extra/cascadia_code_s10_c02_right_bold_noisy.pbm"  # 395 words, 42 lines, 2 columns, 5 blocks.
-        image_path = "./assets/ocr/extra/lorem_s16_c02.pbm" # 318 words, 39 lines, 2 columns, 4 blocks.
-
     main(image_path)

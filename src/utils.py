@@ -1,7 +1,11 @@
 import timeit
 import functools
-import numpy as np
-import subprocess
+try:
+    import numpy as np
+except:
+    print('WARNING: Aparentemente não tem numpy instalado. Usado para estrutura de matriz rápidas. Instale com `pip install numpy`')
+    exit(1)
+
 
 
 
@@ -11,7 +15,7 @@ def timer(func):
         start_time = timeit.default_timer()
         result = func(*args, **kwargs)
         end_time = timeit.default_timer()
-        print(f"{func.__name__} took {(end_time - start_time):.4f}s to execute.")
+        print(f"INFO: {func.__name__} took {(end_time - start_time):.4f}s to execute.")
         return result
 
     return wrapper
@@ -19,6 +23,7 @@ def timer(func):
 
 @timer
 def create_video_from_images(images, output_video_path, fps=24):
+   
     if len(images) == 0:
         return
     height, width, _ = images[0].shape
@@ -49,6 +54,7 @@ def create_video_from_images(images, output_video_path, fps=24):
         output_video_path,
     ]
     try:
+        import subprocess
         ffmpeg_process = subprocess.Popen(ffmpeg_cmd, stdin=subprocess.PIPE)
         for img in images:
             # Numpy array has tobytes(), but other implemeations might also have it
@@ -75,7 +81,6 @@ def convert_to_rgb(image):
     return result
 
 
-@timer
 def write_ppm_file(filepath, image):
     height, width = image.shape[:2]
     image = image.astype(int)

@@ -1,4 +1,10 @@
 import numpy as np
+try:
+    import numpy as np
+except:
+    print('WARNING: Aparentemente não tem numpy instalado. Usado para estrutura de matriz rápidas. Instale com `pip install numpy`')
+    exit(1)
+
 
 kernel_block_3x3 = np.array(
     [
