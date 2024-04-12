@@ -6,7 +6,10 @@
 If no image is provided a default one will be used.
 On folder ``assets`` you will found possible images to use.
 
-![Examples](https://youtu.be/uA45GeodGss)
+
+
+https://github.com/evertonse/pim/assets/69195288/d1e7937a-0541-4f69-902c-077b13b186a1
+
 
 # Setup
 
