@@ -58,7 +58,7 @@ def string(img, letters):
 
 
 def main():
-    img = pim.read_ppm_file("./output/words/word_170x216.ppm")
+    img = pim.read_ppm_file("./assets/word_170x216_volta.ppm")
     letters = {
         l: pim.invert(pim.read_ppm_file(f"./assets/letters/{l}.pbm"))
         for l in ["v", "o", "l", "t", ]
