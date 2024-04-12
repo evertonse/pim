@@ -1,0 +1,129 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+% abnTeX2: Modelo de Trabalho Acadêmico em conformidade com 
+% as normas da ABNT
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\documentclass[english, 
+               brazil, 
+               bsc] %Opções bsc (TCC) e msc (Mestrado)
+               {dcomp-abntex2}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Área para adição de pacotes extras
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+% \usepackage{lipsum} % Retirar para a versão final do documento
+\usepackage{float}
+\usepackage{pgfgantt}
+\usepackage{lscape}
+
+
+\restylefloat{table}
+
+
+%Utilize aqui seu pacote preferido para algoritmos
+\usepackage[linesnumbered]{algorithm2e}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%Compila o índice
+\makeindex
+
+
+\begin{document}
+
+
+% Seleciona o idioma do documento (conforme pacotes do babel)
+\selectlanguage{brazil}
+
+
+% Retira espaço extra obsoleto entre as frases.
+\frenchspacing 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ELEMENTOS PRÉ-TEXTUAIS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\pretextual
+
+
+
+
+\titulo{PreOCR - Trabalho de Processamento de Imagens T01 2023.2} 
+\autor{Grupo 13 - Everton Santos de Andrade Júnior}
+\orientador{}
+\coorientador{}
+
+
+% \inserirInformacoesPDF
+
+
+
+
+
+% \inserirInformacoesPDF
+%
+%
+\imprimircapa
+% \imprimirfolhaderosto*
+%  
+%     
+\mostrarSUMARIO
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ELEMENTOS TEXTUAIS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\textual
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Introdução
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Introdução}
+
+\label{introduction}
+
+
+
+
+\section{Motivação}
+
+
+
+
+
+\phantompart
+\bibliography{Bibliografia}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ELEMENTOS PÓS-TEXTUAIS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\postextual
+
+
+\renewcommand{\chapnumfont}{\chaptitlefont}
+\renewcommand{\afterchapternum}{}
+% \include{Pos_Textual/Apendices}
+% \include{Pos_Textual/Anexos}
+
+
+\end{document}
