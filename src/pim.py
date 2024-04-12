@@ -85,7 +85,7 @@ def fast_median_blur(image, filter_size=3):
 def understandable_median_blur(image, filter_size=3):
     assert len(image.shape) == 2
 
-    convolved = image.copy()
+    result = image.copy()
     height = image.shape[0]
     width = image.shape[1]
     for y in range(height):
@@ -106,8 +106,8 @@ def understandable_median_blur(image, filter_size=3):
                         color = image[y + j_offset, x + i_offset]
                     colors.append(color)
             colors.sort()
-            convolved[y, x] = colors[(len(colors) // 2)]
-    return convolved
+            result[y, x] = colors[(len(colors) // 2)]
+    return result
 
 
 @timer 
@@ -173,7 +173,7 @@ def fast_erode(image, kernel):
     return eroded
 
 @timer
-def understandable_dilate(image, kernel, iterations=1):
+def understandable_dilate(image, kernel):
     result = np.zeros(image.shape)
     height = image.shape[0]
     width = image.shape[1]
