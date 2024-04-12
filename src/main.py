@@ -21,8 +21,9 @@ MINIMUM_MAX_DISTANCE_FOR_BLOCK_GROUPING = 28
 GROUP_NUMBER = 13
 
 
-# Write ppm files for each word the algortihm finds
-WRITE_PPM_FILES_FOR_WORDS = False
+# Write ppm files for each word the algorthim finds
+# This is used sometimes for testing the ocr functions
+WRITE_PPM_FILES_FOR_WORDS =  False
 
 
 def main():
@@ -41,7 +42,6 @@ def main():
 
         # Custom, made by us
         "./assets/grupo_13_cascadia_code_centralizado_tamanho_16_colunas_2_blocos_4_linhas_38_palavras_226.pbm",
-        "./assets/grupo_13_arial_esquerda_tamanho_13_colunas_2_blocos_2_linhas_24_palavras_132.pbm",
         "./assets/grupo_13_arial_esquerda_tamanho_16_colunas_2_blocos_4_linhas_39_palavras_318.pbm",
         "./assets/grupo_13_cascadia_code_bold_direita_tamanho_16_colunas_2_blocos_4_linhas_42_palavras_247.pbm",
         "./assets/grupo_13_cascadia_code_bold_esquerda_tamanho_10_colunas_2_blocos_5_linhas_42_palavras_395.pbm",
@@ -50,6 +50,7 @@ def main():
         "./assets/grupo_13_comic_sans_ms_bold_centralizado_tamanho_8_colunas_2_blocos_5_linhas_39_palavras_384.pbm",
         "./assets/grupo_13_cascadia_code_bold_esquerda_noisy_tamanho_10_colunas_2_blocos_5_linhas_42_palavras_395.pbm",
         "./assets/grupo_13_impact_esquerda_tamanho_40_colunas_2_blocos_2_linhas_18_palavras_46.pbm",
+        "./assets/grupo_13_arial_esquerda_tamanho_13_colunas_2_blocos_2_linhas_24_palavras_132.pbm",
     ]
 
     # Choose last possible image paths as the default image path
