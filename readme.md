@@ -6,6 +6,7 @@
 If no image is provided a default one will be used.
 On folder ``assets`` you will found possible images to use.
 
+![Examples](https://youtu.be/uA45GeodGss)
 
 # Setup
 
