@@ -38,19 +38,20 @@ def main():
         "./assets/professora/professora_arial_esquerda_tamanho_12_colunas_2_blocos_8_linhas_52_palavras_557.pbm",
         "./assets/professora/professora_arial_esquerda_tamanho_12_colunas_3_blocos_8_linhas_52_palavras_557.pbm",
         "./assets/professora/professora_arial_justificado_noisy_tamanho_12_colunas_2_blocos_8_linhas_52_palavras_557.pbm",
-        "./assets/professora/professora_arial_justificado_tamanho_12_colunas_3_blocos_8_linhas_52_palavras_557.pbm",
 
         # Custom, made by us
-        "./assets/grupo_13_cascadia_code_centralizado_tamanho_16_colunas_2_blocos_4_linhas_38_palavras_226.pbm",
         "./assets/grupo_13_arial_esquerda_tamanho_16_colunas_2_blocos_4_linhas_39_palavras_318.pbm",
         "./assets/grupo_13_cascadia_code_bold_direita_tamanho_16_colunas_2_blocos_4_linhas_42_palavras_247.pbm",
         "./assets/grupo_13_cascadia_code_bold_esquerda_tamanho_10_colunas_2_blocos_5_linhas_42_palavras_395.pbm",
         "./assets/grupo_13_cascadia_code_bold_esquerda_very_noisy_tamanho_10_colunas_2_blocos_5_linhas_42_palavras_395.pbm",
-        "./assets/grupo_13_time_new_roman_italico_tamanho_18_colunas_4_blocos_6_linhas_38_palavras_196.pbm",
         "./assets/grupo_13_comic_sans_ms_bold_centralizado_tamanho_8_colunas_2_blocos_5_linhas_39_palavras_384.pbm",
         "./assets/grupo_13_cascadia_code_bold_esquerda_noisy_tamanho_10_colunas_2_blocos_5_linhas_42_palavras_395.pbm",
-        "./assets/grupo_13_impact_esquerda_tamanho_40_colunas_2_blocos_2_linhas_18_palavras_46.pbm",
         "./assets/grupo_13_arial_esquerda_tamanho_13_colunas_2_blocos_2_linhas_24_palavras_132.pbm",
+        "./assets/grupo_13_cascadia_code_centralizado_tamanho_16_colunas_2_blocos_4_linhas_38_palavras_226.pbm",
+        "./assets/grupo_13_time_new_roman_italico_tamanho_18_colunas_4_blocos_6_linhas_38_palavras_196.pbm",
+        "./assets/grupo_13_impact_esquerda_tamanho_40_colunas_2_blocos_2_linhas_18_palavras_46.pbm",
+
+        "./assets/professora/professora_arial_justificado_tamanho_12_colunas_3_blocos_8_linhas_52_palavras_557.pbm",
     ]
 
     # Choose last possible image paths as the default image path
@@ -143,7 +144,7 @@ def process(image_path):
     if best_height > HEIGHT_THRESHOLD_TO_DILATE_AGAIN:
         # Big height probably makes it likely to have a more spaced out letters
         # Therefore we need to dilate horizontally again to catch these cases
-        iterations_height_based = int(best_height // HEIGHT_THRESHOLD_TO_DILATE_AGAIN)
+        iterations_height_based = 1 + int(best_height // HEIGHT_THRESHOLD_TO_DILATE_AGAIN)
         print(
             f"INFO: Big height detected, need {iterations_height_based} more dilations."
         )
