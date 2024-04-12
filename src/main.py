@@ -1,19 +1,22 @@
-import sys
+import sys  # For cmd line arguments
 
 import pim  # My (P)rocessing (IM)age functions
-from utils import *
-from kernels import *
+from utils import *  # Just utils function like write_ppm_file
+from kernels import *  # Definitions of diferent kernels
 
-# If any of these are true, the algorithm works for more cases
+# If more of these are set to `True`, the algorithm works for more cases. But potentially slower
 INCREASE_ACCURACY_BY_CLOSING = not False
 INCREASE_ACCURACY_BY_BIGGER_KERNEL = not False
 INCREASE_ACCURACY_BY_OPENING_FOLLOWED_BY_CLOSING = False
+
+HEIGHT_THRESHOLD_TO_DILATE_AGAIN = 31
+
+MINIMUM_MAX_DISTANCE_FOR_BLOCK_GROUPING = 28
 
 # "Grupo 13"
 # Aluon: ÉVERTON SANTOS DE ANDRADE JUNIOR
 # Curso: CIÊNCIA DA COMPUTAÇÃO
 # Matrícula: 202100011379
-# Usuário: evertonse
 # E-mail:  evertonse.junior@gmail.com
 GROUP_NUMBER = 13
 
@@ -21,22 +24,32 @@ GROUP_NUMBER = 13
 # Write ppm files for each word the algortihm finds
 WRITE_PPM_FILES_FOR_WORDS = False
 
-# Just a mode for developing
-DEBUG = not False
-
 
 def main():
     possible_image_paths = [
-        "./assets/extra/arial_s14_c04_left.png",
-        "./assets/lorem_s12_c03.pbm",  # 557 words, 52 lines, 3 columns, 8 blocks.
-        "./assets/extra/cascadia_code_s16_c02_center.png",
-        "./assets/extra/cascadia_code_s10_c02_right_bold.pbm",  # 395 words, 42 lines, 2 columns, 5 blocks.
-        "./assets/extra/arial_s18_c04_left.pbm",
-        "./assets/extra/arial_s13_c02_left_space.pbm",  #  132 words.
-        "./assets/extra/cascadia_code_s10_c02_right_bold_noisy.pbm",  # 395 words, 42 lines, 2 columns, 5 blocks.
-        "./assets/extra/grupo_13_arial_colunas_2_blocos_4_linhas_39_palavras_318.pbm"  # 318 words, 39 lines, 2 columns, 4 blocks.
-        # "./assets/lorem_s12_c02_noise.pbm" # 583 words, 52 lines, 2 columns, 7 blocks.
-        # (exibits wrong blocks because of heights) "./assets/ocr/lorem_s12_c03_just.pbm"  # 557 words, 52 lines, 3 columns, 8 blocks.
+        
+       
+        # Professora examples, but renamed to show all stats
+        "./assets/professora/professora_arial_esquerda_noisy_tamanho_12_colunas_3_blocos_8_linhas_52_palavras_557.pbm",
+        "./assets/professora/professora_arial_justificado_tamanho_12_colunas_2_blocos_7_linhas_52_palavras_583.pbm",
+        "./assets/professora/professora_arial_esquerda_noisy_tamanho_12_colunas_2_blocos_4_linhas_52_palavras_476.pbm",
+        "./assets/professora/professora_arial_esquerda_tamanho_12_colunas_2_blocos_4_linhas_52_palavras_476.pbm",
+        "./assets/professora/professora_arial_esquerda_tamanho_12_colunas_2_blocos_8_linhas_52_palavras_557.pbm",
+        "./assets/professora/professora_arial_esquerda_tamanho_12_colunas_3_blocos_8_linhas_52_palavras_557.pbm",
+        "./assets/professora/professora_arial_justificado_noisy_tamanho_12_colunas_2_blocos_8_linhas_52_palavras_557.pbm",
+        "./assets/professora/professora_arial_justificado_tamanho_12_colunas_3_blocos_8_linhas_52_palavras_557.pbm",
+
+        # Custom, made by us
+        "./assets/grupo_13_cascadia_code_centralizado_tamanho_16_colunas_2_blocos_4_linhas_38_palavras_226.pbm",
+        "./assets/grupo_13_arial_esquerda_tamanho_13_colunas_2_blocos_2_linhas_24_palavras_132.pbm",
+        "./assets/grupo_13_arial_esquerda_tamanho_16_colunas_2_blocos_4_linhas_39_palavras_318.pbm",
+        "./assets/grupo_13_cascadia_code_bold_direita_tamanho_16_colunas_2_blocos_4_linhas_42_palavras_247.pbm",
+        "./assets/grupo_13_cascadia_code_bold_esquerda_tamanho_10_colunas_2_blocos_5_linhas_42_palavras_395.pbm",
+        "./assets/grupo_13_cascadia_code_bold_esquerda_very_noisy_tamanho_10_colunas_2_blocos_5_linhas_42_palavras_395.pbm",
+        "./assets/grupo_13_time_new_roman_italico_tamanho_18_colunas_4_blocos_6_linhas_38_palavras_196.pbm",
+        "./assets/grupo_13_comic_sans_ms_bold_centralizado_tamanho_8_colunas_2_blocos_5_linhas_39_palavras_384.pbm",
+        "./assets/grupo_13_cascadia_code_bold_esquerda_noisy_tamanho_10_colunas_2_blocos_5_linhas_42_palavras_395.pbm",
+        "./assets/grupo_13_impact_esquerda_tamanho_40_colunas_2_blocos_2_linhas_18_palavras_46.pbm",
     ]
 
     # Choose last possible image paths as the default image path
@@ -48,7 +61,10 @@ def main():
     else:
         image_path = sys.argv[1]
 
-    process(image_path)
+    words, lines, columns, blocks = process(image_path)
+
+    # Print the words, lines columns and blocks found to the user
+    print(f"\n> {words} words, {lines} lines, {columns} columns, {blocks} blocks.")
 
 
 # The whole project is in here
@@ -69,7 +85,7 @@ def process(image_path):
     pim.write_ppm_file("./output/inverted.ppm", image)
 
     # Add the current image to the video list of frames
-    pim.video_frames.extend([pim.convert_to_rgb(image)]*3)
+    pim.video_frames.extend([pim.convert_to_rgb(image)] * 3)
 
     # Both of the branches below are using horizontal kernel
     # To try to connect letter that are closed to gether
@@ -83,8 +99,7 @@ def process(image_path):
 
     # Save the dilated image as a intermediate file
     pim.write_ppm_file("./output/dilate.ppm", image)
-    pim.video_frames.extend([pim.convert_to_rgb(image)]*3)
-
+    pim.video_frames.extend([pim.convert_to_rgb(image)] * 3)
 
     # Below are possible choices considered for kernel when doing a open and closing operations
     # turns out the algorithm works well with horizonatal kernel only, as opposed to a "crufix" kernel
@@ -117,11 +132,23 @@ def process(image_path):
 
     # Save final snap shot for the preprocessed image and add to the video frame list
     pim.write_ppm_file("./output/preprocessed.ppm", image)
-    pim.video_frames.extend([pim.convert_to_rgb(image)]*3)
+    pim.video_frames.extend([pim.convert_to_rgb(image)] * 3)
 
     bboxes = pim.find_connected_components_bboxes(image)
     best_height = pim.choose_best_height(bboxes)
     min_area = (best_height * best_height) / (2.5)
+    print(f"INFO: median height found is {best_height} pixels.")
+
+    if best_height > HEIGHT_THRESHOLD_TO_DILATE_AGAIN:
+        # Big height probably makes it likely to have a more spaced out letters
+        # Therefore we need to dilate horizontally again to catch these cases
+        iterations_height_based = int(best_height // HEIGHT_THRESHOLD_TO_DILATE_AGAIN)
+        print(
+            f"INFO: Big height detected, need {iterations_height_based} more dilations."
+        )
+        image = pim.dilate(image, horz_kernel_5x5, iterations=iterations_height_based)
+        # Update the bboxes after new dilation
+        bboxes = pim.find_connected_components_bboxes(image)
 
     # Filter it to eliminate punctuation bbox, and keep only words
     words_bboxes = list(filter(lambda x: pim.bbox_area(x) > min_area, bboxes))
@@ -130,7 +157,11 @@ def process(image_path):
         min_y, min_x, max_y, max_x = bbox
         pim.rectangle(orig, (min_y, min_x), (max_y, max_x), (255, 0, 0), 2)
 
-    blocks = pim.group_bboxes(words_bboxes, max_distance=best_height, image=orig)
+    blocks = pim.group_bboxes(
+        words_bboxes,
+        max_distance=max(best_height, HEIGHT_THRESHOLD_TO_DILATE_AGAIN),
+        image=orig,
+    )
     nblocks = len(blocks)
     for bbxs in blocks:
         y, x, y2, x2 = pim.enclosing_bbox(bbxs)
@@ -150,14 +181,12 @@ def process(image_path):
             y, x, y2, x2 = b
             pim.write_ppm_file(f"./output/words/word_{y}x{x}.ppm", ppm_file[y:y2, x:x2])
 
-    # Print the words, lines columns and blocks found to the user
-    print(f"\n> {nwords} words, {nlines} lines, {ncolumns} columns, {nblocks} blocks.")
-
     # Write the final image with the bouding boxes for the words and blocks
     pim.write_ppm_file(
         f"./group_{GROUP_NUMBER}_detected_colunas_{ncolumns}_blocos_{nblocks}_linhas_{nlines}_palavras_{nwords}.ppm",
         orig,
     )
+    return nwords, nlines, ncolumns, nblocks
 
 
 if __name__ == "__main__":

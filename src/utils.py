@@ -116,26 +116,33 @@ def read_ppm_file(filepath):
     """
     https://oceancolor.gsfc.nasa.gov/staff/norman/seawifs_image_cookbook/faux_shuttle/pbm.html
     """
-    with open(filepath, "r") as f:
-        header = f.readline().strip()
-        assert header == "P1", "Only P1 format is supported."
+    try:
+        with open(filepath, "r") as f:
+            header = f.readline().strip()
+            if not header == "P1":
+                print(f"ERROR: Trying to open a {header} format. But only P1 format is supported.")
+                exit(1)
+                
 
-        # Skip comment lines
-        line = f.readline().strip()
-        while line.startswith("#"):
+            # Skip comment lines
             line = f.readline().strip()
+            while line.startswith("#"):
+                line = f.readline().strip()
 
-        width, height = map(int, line.strip().split())
+            width, height = map(int, line.strip().split())
 
-        pixel_data = list()
-        while line:
-            line = (
-                f.readline().replace(" ", "").replace("\n", "")
-            )  # white space is ignored
-            if line.startswith("#"):
-                continue
-            # Each pixel in is represented by a byte containing ASCII '1' or '0', representing black and white respectively. There are no fill bits at the end of a row.
-            pixel_data.extend(map(lambda x: 255 if x == "0" else 0, line))
+            pixel_data = list()
+            while line:
+                line = (
+                    f.readline().replace(" ", "").replace("\n", "")
+                )  # white space is ignored
+                if line.startswith("#"):
+                    continue
+                # Each pixel in is represented by a byte containing ASCII '1' or '0', representing black and white respectively. There are no fill bits at the end of a row.
+                pixel_data.extend(map(lambda x: 255 if x == "0" else 0, line))
+    except FileNotFoundError:
+        print("ERROR: file does not exist, sorry =P. Try executing the script from the root of the project.")
+        exit(1)
 
     array = np.array(pixel_data, dtype=np.uint8).reshape(height, width)
     return array
