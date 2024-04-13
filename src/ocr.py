@@ -26,45 +26,53 @@ def string(img, letters):
     bbxs = pim.find_connected_components_bboxes(img, connectivity=8)
     # Start from leftmost
     bbxs = sorted(bbxs, key=lambda b: b[1])
-    print(bbxs)
 
-
+    letter_sequence = []
     for b in bbxs:
         y, x, y2, x2 = b
         orig = pim.rectangle(orig, (y, x), (y2, x2), (255, 0, 0), 1)
-        best_sim = 0 
-        best_letter = '-'
+        best_sim = 0
+        best_letter = "-"
         for l, limg in letters.items():
             resized = pim.resize(img[y:y2, x:x2], *limg.shape)
             sim = 0
             for j in range(limg.shape[0]):
                 for i in range(limg.shape[1]):
-                    if limg[j,i] == 0:
-                        if resized[j,i] == resized[j,i]:
+                    if resized[j, i] > 0:
+                        if limg[j, i] > 0:
                             sim += 1
 
             pim.write_ppm_file(f"./output/resized{b}.ppm", resized)
-            sim = (limg == resized).flatten().sum()
-            print(f'{l} -> {sim=}')
-            
+            # sim = (limg == resized).flatten().sum() # Outra tentativa
+            print(f"{l} -> {sim=}")
+
             if sim > best_sim:
                 best_sim = sim
                 best_letter = l
-        print(f'best -> {best_letter}\n')
+        letter_sequence.append(best_letter)
+        print(letter_sequence)
 
-
-
-    pim.write_ppm_file("./output/ocr.ppm", orig)
+    return "".join(letter_sequence), orig
 
 
 def main():
-    img = pim.read_ppm_file("./assets/word_170x216_volta.ppm")
-    letters = {
-        l: pim.invert(pim.read_ppm_file(f"./assets/letters/{l}.pbm"))
-        for l in ["v", "o", "l", "t", ]
-    }
+    words = ["volta", "tremendo", "nesse"]
+    for w in words:
+        img = pim.read_ppm_file(f"./assets/word_{w}.ppm")
 
-    string(img, letters)
+        letters = {
+            l: pim.invert(pim.read_ppm_file(f"./assets/letters/{l}.pbm"))
+            for l in [
+                "v",
+                "o",
+                "l",
+                "t",
+            ]
+        }
+
+        found, img = string(img, letters)
+        print(f"INFO: Found {found} for {w}")
+        pim.write_ppm_file(f"./output/ocr_{w}.ppm", img)
 
 
 if __name__ == "__main__":

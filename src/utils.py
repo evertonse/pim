@@ -68,7 +68,7 @@ def create_video_from_images(images, output_video_path, fps=24):
         for img in images:
             if len(img.shape) == 2:
                 img = convert_to_rgb(img)
-            # Numpy array has tobytes(), but other implemeations might also have it
+            # Numpy array has tobytes(), but other implementations might also have it
             ffmpeg_process.stdin.write(img.tobytes())
         ffmpeg_process.stdin.close()
         ffmpeg_process.wait()
@@ -82,7 +82,7 @@ def create_video_from_images(images, output_video_path, fps=24):
 def resize(image, new_height, new_width):
     height, width = image.shape
 
-    # Calculate the scale factors
+    # scale factors
     scale_height = height / new_height
     scale_width = width / new_width
 
