@@ -12,8 +12,12 @@ FILENAME = main
 OPEN = open 
 # OPEN = evince
 
+LATEX_CMD = pdflatex
+
+OUTPUTFILENAME = PI_GRUPO_13_EVERTON_SANTOS_DE_ANDRADE_JUNIOR_RELATORIO
+
 run: clean all
-	cp $(FILENAME).pdf pi_grupo_13_everton_santos_de_andrade_junior_relatorio.pdf
+	cp $(FILENAME).pdf $(OUTPUTFILENAME).pdf
 
 
 all: $(FILENAME).pdf
@@ -26,10 +30,10 @@ pimg.ps: $(FILENAME).dvi
 	dvips -o $(FILENAME).ps $(FILENAME).dvi
 
 $(FILENAME).pdf: *.tex **.tex 
-	pdflatex $(FILENAME).tex
+	$(LATEX_CMD) $(FILENAME).tex
 	bibtex $(FILENAME)
-	pdflatex $(FILENAME).tex
-	pdflatex $(FILENAME).tex
+	$(LATEX_CMD) $(FILENAME).tex
+	$(LATEX_CMD) $(FILENAME).tex
 
 show: all
 	$(OPEN) $(FILENAME).pdf &
@@ -38,7 +42,7 @@ $(FILENAME).dvi: clean $(FILENAME).tex
 	echo "Running latex..."
 	latex $(FILENAME).tex
 	echo "Running makeindex..."
-	#makeindex $(FILENAME).idx
+	makeindex $(FILENAME).idx
 	echo "Rerunning latex...."
 	latex $(FILENAME).tex
 	latex_count=5 ; \

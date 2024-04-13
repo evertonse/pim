@@ -21,10 +21,10 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-% \usepackage{lipsum} % Retirar para a versão final do documento
 \usepackage{float}
 \usepackage{pgfgantt}
 \usepackage{lscape}
+
 
 
 \restylefloat{table}
@@ -176,7 +176,7 @@ Também houve a detecção de caracteres, os resultados te encontrar o retangulo
 \end{figure}
 
 
-\chapter{Instruções \& Notas sobre o Projeto}
+\chapter{Instruções \& Observações sobre o Projeto}
 \label{ch-notas}
 
 O repositório do projeto pode ser encontrado através do link \url{https://github.com/evertonse/pim}. O método proposto está implementado em Python e pode ser executado a partir da pasta raiz do projeto. Primeiro, certifique-se de ter o repositório do projeto clonado ou baixado. Em seguida, na linha de comando, navegue até a pasta raiz do projeto e execute o seguinte comando, substituindo \texttt{caminho/para/imagem.pbm} pelo caminho da imagem que deseja processar:
@@ -190,10 +190,11 @@ Exemplo de caminho imagem pode ser:
 python3 src/main.py assets/grupo_13_arial_esquerda_tamanho_16_colunas_2_blocos_4_linhas_39_palavras_318.pbm
 \end{verbatim}
 
-Se nenhuma imagem for fornecida, será usada uma imagem padrão. Imagens de exemplo adicionais geradas pelo nosso grupo podem ser encontradas na pasta "assets" do repositório do projeto. Essas imagens seguem o padrão adaptado do documento PreOCR, pois precisamos identificar mais detalhes sobre a imagem. Seja $F$, $T$, $C$, $B$, $L$ e $P$ variáveis que representam informações sobre a fonte (tipo) e se é justificado, centralizado, etc., tamanho, número de colunas, número de linhas, número de blocos e número de palavras, respectivamente. Assim, o nome das imagens de teste segue o padrão \texttt{grupo\_13\_F\_tamanho\_T\_colunas\_C\_blocos\_B\_linhas\_L\_palavras\_P}. Um exemplo é:
+Se nenhuma imagem for fornecida, será usada uma imagem padrão. Imagens de exemplo adicionais geradas pelo nosso grupo podem ser encontradas na pasta "\texttt{assets}". Essas imagens seguem o padrão adaptado do documento PreOCR, pois precisamos identificar mais detalhes sobre a imagem. Seja $F$, $T$, $C$, $B$, $L$ e $P$ variáveis que representam informações sobre a fonte (tipo) e se é justificado, centralizado, etc., tamanho, número de colunas, número de linhas, número de blocos e número de palavras, respectivamente. Assim, o nome das imagens de teste segue o padrão \texttt{grupo\_13\_F\_tamanho\_T\_colunas\_C\_blocos\_B\_linhas\_L\_palavras\_P}. Um exemplo é:
 
 \begin{itemize}
-  \item \texttt{\small grupo\_13\_arial\_esquerda\_tamanho\_16\_colunas\_2\_blocos\_4\_linhas\_39\_palavras\_318}.
+  \item \texttt{\small grupo\_13\_arial\_esquerda\_tamanho\_16\_
+    colunas\_2\_blocos\_4\_linhas\_39\_palavras\_318}.
 \end{itemize}
 
 \section{Requisitos}
@@ -202,45 +203,70 @@ Se nenhuma imagem for fornecida, será usada uma imagem padrão. Imagens de exem
   \item Opcionalmente se a ferramenta \texttt{ffmpeg} for instalada e esteja disponível no caminho do sistema o projeto irá gerar vídeos. No Ubuntu, \texttt{ffmpeg} pode ser instalado usando \texttt{sudo apt install ffmpeg} ou \texttt{sudo snap install ffmpeg}.
   \item A biblioteca \texttt{numpy} é necessária para manipulação eficiente das matrizes (listas de pythons são absurdamente lentas). Foi instalado apenas pela estutura de dados. As operações usadas do numpy são bem simples:  multiplicação de matriz por escalar; tirar o maximo ou minimo de matrizes; soma e subtração de matrizes. Pode ser instalada via \texttt{pip install numpy}. Se o \texttt{pip} não estiver instalado, ele pode ser obtido executando \texttt{sudo apt install python3-pip} no Ubuntu. \end{itemize}
 
-\section{Notas}
-Todos os arquivos gerados são armazenados na pasta "output", exceto o arquivo principal que contém os retângulos das palavras em vermelho e o arquivo de vídeo. Ambos os arquivos são prefixados com "group\_13" e estão localizados no diretório atual. O site \href{https://convertio.co/pdf-pbm/}{convertio.co} é usado para converter arquivos PDF para o formato PBM para arquivos de entrada adicionais.
+\section{Observações}
 
-No \autoref{usage}, temos um exemplo de execução do projeto na linha de comando, onde são impressas diversas informações úteis. Durante a execução do comando, são fornecidas informações sobre o tempo decorrido para várias etapas do processamento da imagem, como a leitura do arquivo de imagem, aplicação de filtros, detecção de componentes conectados e criação do vídeo resultante. Além disso, o resultado final da execução, incluindo o número total de palavras, linhas, colunas e blocos detectados na imagem processada, é apresentado para fornecer uma visão geral do processamento da imagem realizado.
+
+Todos os arquivos gerados durante a execução do projeto são armazenados na pasta "\texttt{output/}", com exceção do arquivo principal que contém os retângulos das palavras em vermelho e do arquivo de vídeo. Esses dois arquivos são prefixados com "\texttt{group\_13}" e estão localizados no diretório atual.
+O site \href{https://convertio.co/pdf-pbm/}{convertio.co} foi usado para converter arquivos PDF para o formato PBM para arquivos de entrada adicionais. As pastas e seus conteúdos, ilustrados na \autoref{folders}, estão organizados da seguinte forma:
+
+\begin{itemize}
+\item \textbf{src/}: diretório que contém o código-fonte do projeto.
+\item \textbf{src/kernels.py}: definição dos elementos estruturante.
+\item \textbf{src/main.py}: arquivo principal do projeto contendo o código de execução principal.
+\item \textbf{src/ocr.py}: implementação da detectção e da tentativa de reconhecimento óptico de caracteres.
+\item \textbf{src/pim.py}: implementação das funções de processamento de imagens usadas: dilatação, erosão, filtro mediana.
+\item \textbf{src/utils.py}: contém funções de utilidade como ler imagem, escrever imagem, fazer resize de imagem.
+\item \textbf{assets/}: contém as imagem \texttt{.pbm} criados pelo grupo.
+\item \textbf{assets/letters/}: contém os modelos de letras utilizados na tentativa de reconhecimento de caracteres.
+\item \textbf{assets/professora/}: contém as imagem .pbm disponibilizados pela professora, mas com os nomes adaptados.
+\item \textbf{output/}: local onde são armazenados os arquivos gerados durante a execução do projeto, sendo apenas os resultados intermediários.
+\end{itemize}
+
+\begin{figure}[htb]
+\caption{\small Estrutura de pastas do projeto.}
+\label{folders}
+    \begin{center}
+    \includegraphics[scale=0.65]{./images/folders.png}
+    \end{center}
+\legend{ \small Fonte: Autor.}
+\end{figure}
+
+No exemplo de execução do projeto apresentado no \autoref{usage}, são fornecidas diversas informações úteis durante a execução do comando. Essas informações incluem o tempo decorrido para cada etapa do processamento, como a leitura do arquivo de imagem, aplicação de filtros, aplicação da dilatação, detecção de componentes conectados, criação do vídeo resultante, entre outros. Além disso, o nome do vídeo salvo e o nome do arquivo final gerado também são exibidos durante a execução do comando. O resultado final da execução, que inclui o número total de palavras, linhas, colunas e blocos detectados na imagem processada, é apresentado na última linha, prefixado com o caractere ''\texttt{>}``.
 
 \begin{codigo}[h]
   \caption{\small Rodando o projeto na linha de comando.}
  \label{usage}
 \begin{lstlisting}
-$ python src/main.py                                 
 USAGE: python3 src/main.py [path/to/image.pbm]
 
-INFO: using default image path
-`./assets/professora/professora_arial_justificado_tamanho_12_
-colunas_3_blocos_8_linhas_52_palavras_557.pbm`
-INFO: read_ppm_file took 0.2952s to execute.
-INFO: Image is 1653x2338 (width x height).
-INFO: fast_median_blur took 4.6492s to execute.
-INFO: fast_dilate2 took 0.0404s to execute.
-INFO: fast_dilate2 took 0.0430s to execute.
-INFO: fast_dilate2 took 0.0224s to execute.
-INFO: closing took 0.0540s to execute.
-INFO: find_connected_components_bboxes took 4.0915s to execute.
-INFO: choose_best_height took 0.0002s to execute.
-INFO: median height found is 25 pixels.
-INFO: group_bboxes took 4.3676s to execute.
-INFO: create_video_from_images took 14.1223s to execute.
+INFO: using default image path `./assets/grupo_13_cascadia_code_bold_esquerda_noisy
+_tamanho_10_colunas_2_blocos_5_linhas_42_palavras_395.pbm`
+INFO: read_ppm_file took 0.0697s to execute.
+INFO: Image is 795x1124 (width x height).
+INFO: fast_median_blur took 1.0870s to execute.
+INFO: fast_dilate2 took 0.0114s to execute.
+INFO: fast_dilate2 took 0.0142s to execute.
+INFO: fast_dilate2 took 0.0073s to execute.
+INFO: closing took 0.0171s to execute.
+INFO: find_connected_components_bboxes took 0.7458s to execute.
+INFO: choose_best_height took 0.0001s to execute.
+INFO: median height found is 11 pixels.
+INFO: group_bboxes took 1.6317s to execute.
+INFO: wrote video output to `group_13_video.mp4`.
+INFO: create_video_from_images took 2.9656s to execute.
+INFO: wrote final output to `./group_13_detected_colunas_2_blocos_5_linhas_42_palavras_395.ppm`.
 
-> 557 words, 52 lines, 3 columns, 8 blocks.
+> 395 words, 42 lines, 2 columns, 5 blocks.
 \end{lstlisting}
 \end{codigo}
 
 
 \chapter{Métodos e Implementações}\label{ch-detalhes}
 
-Neste trabalho, aplicamos técnicas de processamento de imagem para detectar e analisar palavras, linhas, colunas e blocos em documentos de texto digitalizados. Para alcançar esse objetivo, utilizamos operações de dilatação e fechamento, juntamente com a detecção de componentes conectados. Criamos elementos estruturantes personalizados para realizar operações específicas, como a detecção de palavras e a segmentação de blocos de texto. Para remoção de ruídos usamos o filtro mediana. Há uma dilatação condicional da imagem, se necessário, com base na altura média dos componentes conectados (palavras) já filtrados.
+Neste trabalho, aplicamos técnicas de processamento de imagem para detectar e analisar palavras, linhas, colunas e blocos em documentos de texto digitalizados. Para alcançar esse objetivo, utilizamos operações de dilatação e fechamento, juntamente com a detecção de componentes conectados, o parametros são especificados na \autoref{parametros}. Criamos elementos estruturantes personalizados para realizar operações específicas, como a detecção de palavras e a segmentação de blocos de texto. Para remoção de ruídos usamos o filtro mediana. Há uma dilatação condicional da imagem, se necessário, com base na altura média dos componentes conectados (palavras) já filtrados.
 
-\section{Parâmetros}
-Nesta seção, apresentamos os parâmetros utilizados nos algoritmos, incluindo os elementos estruturantes customizados, como os kernels de dilatação e fechamento, com diferentes tamanhos e formatos. Além disso, destacamos variáveis de limiar que são ajustadas para alterar o comportamento do algoritmo, adaptando-o às características da imagen sendo processada.
+\section{Parâmetros} \label{parametros}
+Nesta seção, apresentamos os parâmetros utilizados nos algoritmos, incluindo os elementos estruturantes de dilatação e fechamento, com diferentes tamanhos e formatos. Além disso, destacamos variáveis de limiar que são ajustadas para alterar o comportamento do algoritmo, adaptando-o às características da imagem sendo processada.
 
 \begin{enumerate}
   \item Filtro Mediana: $3 \times 3$
@@ -277,7 +303,7 @@ Nesta seção, apresentamos os parâmetros utilizados nos algoritmos, incluindo 
        
 \item Limiar para ocorrer dilatação condicional: altura mediana deve ser superior à 31 pixels.
 
-\item Calculo iterações para dilatação condicional: \texttt{round}(1 + altura\_mediana / 31)
+\item Calculo da quantidade de iterações para dilatação condicional: \texttt{round}(1 + altura\_mediana / 31)
 
 \item Componentes Conectados: consideramos 8-connectividade, isto é, as diagonais são consideradas conectadas.
 
@@ -295,11 +321,25 @@ Nesta seção, apresentamos os parâmetros utilizados nos algoritmos, incluindo 
 \section{Detalhes} 
 
 
+O algoritmo inicia lendo a imagem de entrada e realizando pré-processamento, o qual inclui a aplicação do filtro da mediana (chamado de \texttt{median\_blur} no código) e a inversão das cores. Essas etapas têm como objetivo remover possíveis ruídos, como o ruído do tipo sal e pimenta, como ilustrado na \autoref{ruidos}. Como os ruídos são confirmados ter tamanho máximo de 1 pixel, um filtro $3 \times 3$ é suficiente. A inversão da imagem é realizada para facilitar a aplicação de algoritmos morfológicos, como a dilatação.
 
-Inicialmente, o algoritmo lê a imagem de entrada e a pré-processa aplicando filtro da medianos (nome da função é no código \texttt{median\_blur}) e invertendo as cores. Essas etapas visam retirar possíveis ruídos do tipo sal de pimenta. Já que foi confirmado que os ruídos não passam do tamanho de 1 pixel um filtro $3 \times 3$ é suficiente. A inversão da imagem é feita para aplicar algoritmos morfológicos, como a dilatação, para melhorar a conectividade dos componentes de texto e facilitar o processamento subsequente. Dependendo dos parâmetros especificados, o algoritmo pode aplicar operações adicionais como fechamento (closing) ou abertura (opening) para refinar ainda mais as regiões de texto. A ideia é utilizar um elemento estruturante, conhecido como SE (do inglês, \textit{Structuring Element}), que connecte as letras; isso pode ser feito com um SE que seja horizontal. Foi testado com diferentes SEs, como fomarto circular, de cruz e vertical, mas o melhor é o horizontal. E faz sentido, pois as letras vem logo à direta da anterior, então para conecta-las, precisamos esticar na horizontal para "grudar" uma na outra como ilustrado na \autoref{horz}. 
+A dilatação é aplicada para melhorar a conectividade dos componentes de texto (palavras) na imagem. Dependendo dos parâmetros especificados, o algoritmo pode realizar operações adicionais, como fechamento (\texttt{closing}) ou abertura (\texttt{opening}), para refinar ainda mais as regiões de texto.
+
+A abordagem do algoritmo envolve o uso de um elemento estruturante, conhecido como SE (\textit{Structuring Element}), para conectar as letras. Isso pode ser alcançado com um SE de formato horizontal. Embora tenham sido testados diferentes tipos de SE, como formatos circular, de cruz e vertical, o SE horizontal mostrou-se mais eficaz. Essa escolha é justificada pelo fato de que as letras normalmente estão alinhadas horizontalmente, exigindo uma expansão na direção horizontal para conectá-las, como ilustrado na \autoref{horz}.
+
+% Inicialmente, o algoritmo lê a imagem de entrada e a pré-processa aplicando filtro da mediana (nome da função no código é \texttt{median\_blur}) e invertemos as cores. Essas etapas visam retirar possíveis ruídos do tipo sal de pimenta, ilustrado na \autoref{ruidos}. Já que foi confirmado que os ruídos não passam do tamanho de 1 pixel um filtro $3 \times 3$ é suficiente. A inversão da imagem é feita para aplicar algoritmos morfológicos, como a dilatação. A dilatação é feita para melhorar a conectividade dos componentes de texto. Dependendo dos parâmetros especificados, o algoritmo pode aplicar operações adicionais como fechamento (\texttt{closing}) ou abertura (\texttt{opening}) para refinar ainda mais as regiões de texto. A ideia é utilizar um elemento estruturante, conhecido como SE (do inglês, \textit{Structuring Element}), que connecte as letras; isso pode ser feito com um SE que seja horizontal. Foi testado com diferentes SEs, como fomarto circular, de cruz e vertical, mas o melhor é o horizontal. E faz sentido, pois as letras vem logo à direta da anterior, então para conecta-las precisamos esticar na horizontal para "grudar" uma na outra como ilustrado na \autoref{horz}. 
 
 \begin{figure}[htb]
-        \caption{\label{horz} \small . }
+        \caption{\label{ruidos} \small  Remoção de ruído. }
+        \begin{center}
+            \includegraphics[scale=0.55]{./images/noise.png}
+        \end{center}
+  \legend{ \small Fonte: Autor.}
+\end{figure}
+
+
+\begin{figure}[htb]
+        \caption{\label{horz} \small Resultado da aplicação de 2 iterações de dilatação com SE horizontal 5x5. }
         \begin{center}
             \includegraphics[scale=0.15]{./images/horizontal_5x5_aplicacao.png}
         \end{center}
@@ -312,9 +352,9 @@ Inicialmente, o algoritmo lê a imagem de entrada e a pré-processa aplicando fi
 
 Podemos perceber que as operações de dilatação horizontal realmente melhoraram a conectividade entre caracteres adjacentes. Esses componentes conectados são as palavras individuais dentro da imagem. O conceito de componentes conectados é baseado em grafos, aplicável a imagens binárias, onde os pixels brancos representam os nós. Existem diferentes tipos de conectividade. Se considerarmos apenas os vizinhos de um pixel como à esquerda, à direita, acima e abaixo, temos o que chamamos de 4-conectividade \cite[2.5.2 Adjacency, Connectivity, Regions, and Boundaries]{gonzalez2008digital}. Ao adicionar as diagonais, temos a 8-conectividade.
 
-O algoritmo apresentado no \autoref{cod-findcomp} é usado para encontrar esses componentes conectados e baseia-se em uma busca em profundidade, marcando os pixels visitados. A busca continua até não encontrar mais caminhos na imagem, considerando também as diagonais. Quando não há mais caminhos a serem explorados, o conjunto de pixels visitados forma um componente conectado. Este processo é repetido até que todos os componentes tenham sido identificados, atualizando os pontos mais à esquerda inferior e mais à direita superior do componente para encontrar o \textit{bounding box} da palavra. Assim, cada palavra é contida em um retângulo, que é desenhado ao redor delas na imagem de saída.
+O algoritmo apresentado no \autoref{cod-findcomp} é usado para encontrar esses componentes conectados e baseia-se em uma busca em profundidade, marcando os pixels visitados. A busca continua até não encontrar mais caminhos na imagem, considerando também as diagonais. Quando não há mais caminhos a serem explorados, o conjunto de pixels visitados forma um componente conectado. Este processo é repetido até que todos os componentes tenham sido identificados, atualizando os pontos mais à esquerda inferior e mais à direita superior do componente que é a \textit{bounding box} (retangulo) da palavra. Posteriomente, é desenhado um retangulo ao redor dessas palavras na imagem de saída. Opcionalmente, as palavras separadas podem ser escritas em uma nova imagem, visando a utilização posterior em tentativas de reconhecimento óptico de caracteres (OCR). 
 
-Além disso, após a identificação dos componentes de texto, é realizada a filtragem para eliminar as \textit{bounding boxes} correspondentes à pontuação e manter apenas aquelas relacionadas às palavras. As palavras são então agrupadas em blocos com base em sua proximidade espacial. Por fim, caixas delimitadoras são desenhadas ao redor das palavras e blocos identificados na imagem original, e um vídeo é gerado para visualizar interativamente as etapas do algoritmo. Opcionalmente, imagens separadas podem ser escritas para cada palavra identificada, visando a utilização posterior em tentativas de reconhecimento óptico de caracteres (OCR). 
+Além disso, após a identificação dos componentes de texto, é realizada a filtragem para eliminar as \textit{bounding boxes} correspondentes à pontuação (virgulas, pontos) e manter apenas aquelas relacionadas às palavras. O \autoref{cod-group_bboxes} mostra como as palavras são então agrupadas em blocos com base em sua proximidade espacial. Para ilustrar  o processo de descoberta desses blocos, um vídeo é gerado para visualizar interativamente as etapas do algoritmo. 
 
 \begin{codigo}[h]
   \caption{\small .}
@@ -361,6 +401,42 @@ def find_connected_components_bboxes(image, min_area=0, connectivity=8):
 \end{lstlisting}
 \end{codigo}
 
+\begin{codigo}[h]
+  \caption{\small.}
+ \label{cod-group_bboxes}
+\begin{lstlisting}[language=python]
+def group_bboxes(bboxes, max_distance, image) -> list[list]:
+    """
+    Group bboxes based on a max distance.
+    `image` is video for purposes
+    """
+    result = list()
+    rest_idxs = [i for i in range(len(bboxes))]
+    while len(rest_idxs) > 0:
+        close_idxs = [rest_idxs.pop()]
+        bbox = bboxes[close_idxs[0]]
+        counter = 0
+        while counter < len(rest_idxs):
+            r_idx = rest_idxs[counter]
+            counter += 1
+            dist = distance(bbox, bboxes[r_idx])
+            if (dist < max_distance) or bbox_overlap(bbox, bboxes[r_idx]):
+                close_idxs.append(r_idx)
+                rest_idxs.remove(r_idx)
+                bbox = enclosing_bbox([bbox, bboxes[r_idx]])
+                counter = 0
+
+                vid_img = image.copy()
+                y, x, y2, x2 = bbox
+                rectangle(vid_img, (y, x), (y2, x2), (0, 244, 55), 2)
+                video_frames.append(vid_img)
+
+        y, x, y2, x2 = bbox
+        rectangle(image, (y, x), (y2, x2), (0, 244, 55), 2)
+        result.append([bboxes[i] for i in close_idxs])
+    return result
+\end{lstlisting}
+\end{codigo}
 
 \subsection{Detecção e Reconhecimento de Caracteres}
 
@@ -550,42 +626,6 @@ Finalmente, a função retorna a lista result, que contém todos os grupos de ca
 
 
 
-\begin{codigo}[h]
-  \caption{\small.}
- \label{group_bboxes}
-\begin{lstlisting}[language=python]
-def group_bboxes(bboxes, max_distance, image) -> list[list]:
-    """
-    Group bboxes based on a max distance.
-    `image` is video for purposes
-    """
-    result = list()
-    rest_idxs = [i for i in range(len(bboxes))]
-    while len(rest_idxs) > 0:
-        close_idxs = [rest_idxs.pop()]
-        bbox = bboxes[close_idxs[0]]
-        counter = 0
-        while counter < len(rest_idxs):
-            r_idx = rest_idxs[counter]
-            counter += 1
-            dist = distance(bbox, bboxes[r_idx])
-            if (dist < max_distance) or bbox_overlap(bbox, bboxes[r_idx]):
-                close_idxs.append(r_idx)
-                rest_idxs.remove(r_idx)
-                bbox = enclosing_bbox([bbox, bboxes[r_idx]])
-                counter = 0
-
-                vid_img = image.copy()
-                y, x, y2, x2 = bbox
-                rectangle(vid_img, (y, x), (y2, x2), (0, 244, 55), 2)
-                video_frames.append(vid_img)
-
-        y, x, y2, x2 = bbox
-        rectangle(image, (y, x), (y2, x2), (0, 244, 55), 2)
-        result.append([bboxes[i] for i in close_idxs])
-    return result
-\end{lstlisting}
-\end{codigo}
 
 \chapter{Conclusão}
 

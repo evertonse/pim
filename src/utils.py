@@ -26,7 +26,6 @@ def timer(func):
 def create_video_from_images(images, output_video_path, fps=24):
     try:
         from pathlib import Path
-
         output_video_path = Path(output_video_path)
         output_video_path.parent.mkdir(parents=True, exist_ok=True)
     except:
@@ -72,12 +71,14 @@ def create_video_from_images(images, output_video_path, fps=24):
             ffmpeg_process.stdin.write(img.tobytes())
         ffmpeg_process.stdin.close()
         ffmpeg_process.wait()
+        print(f"INFO: wrote video output to `{output_video_path}`.")
         return True
     except:
         print(
             "WARNING: Aparentemente `ffmpeg` não está no path desse shell. Instale com  `sudo apt install ffmpeg` se quiser ver o video gerado por este projeto."
         )
         return False
+
 
 def resize(image, new_height, new_width):
     height, width = image.shape
@@ -94,6 +95,7 @@ def resize(image, new_height, new_width):
             src_x = int(x * scale_width)
             resized_image[y, x] = image[src_y, src_x]
     return resized_image
+
 
 def convert_to_rgb(image):
     assert len(image.shape) == 2

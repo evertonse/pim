@@ -44,13 +44,13 @@ def main():
         "./assets/grupo_13_arial_esquerda_tamanho_16_colunas_2_blocos_4_linhas_39_palavras_318.pbm",
         "./assets/grupo_13_cascadia_code_bold_direita_tamanho_16_colunas_2_blocos_4_linhas_42_palavras_247.pbm",
         "./assets/grupo_13_cascadia_code_bold_esquerda_tamanho_10_colunas_2_blocos_5_linhas_42_palavras_395.pbm",
-        "./assets/grupo_13_cascadia_code_bold_esquerda_very_noisy_tamanho_10_colunas_2_blocos_5_linhas_42_palavras_395.pbm",
-        "./assets/grupo_13_cascadia_code_bold_esquerda_noisy_tamanho_10_colunas_2_blocos_5_linhas_42_palavras_395.pbm",
+        "./assets/grupo_13_cascadia_code_bold_esquerda_very_noisy_tamanho_10_colunas_2_blocos_5_linhas_42_palavras_395.pbm", # detecs an extra columns because of excessive noise
         "./assets/grupo_13_arial_esquerda_tamanho_13_colunas_2_blocos_2_linhas_24_palavras_132.pbm",
         "./assets/grupo_13_cascadia_code_centralizado_tamanho_16_colunas_2_blocos_4_linhas_38_palavras_226.pbm",
         "./assets/grupo_13_time_new_roman_italico_tamanho_18_colunas_4_blocos_6_linhas_38_palavras_196.pbm",
         "./assets/grupo_13_impact_esquerda_tamanho_40_colunas_2_blocos_2_linhas_18_palavras_46.pbm",
         "./assets/grupo_13_comic_sans_ms_bold_centralizado_tamanho_8_colunas_2_blocos_5_linhas_39_palavras_384.pbm",
+        "./assets/grupo_13_cascadia_code_bold_esquerda_noisy_tamanho_10_colunas_2_blocos_5_linhas_42_palavras_395.pbm",
     ]
 
     # Choose last possible image paths as the default image path
@@ -183,8 +183,10 @@ def process(image_path):
             pim.write_ppm_file(f"./output/words/word_{y}x{x}.ppm", ppm_file[y:y2, x:x2])
 
     # Write the final image with the bouding boxes for the words and blocks
+    final_image_path = f"./group_{GROUP_NUMBER}_detected_colunas_{ncolumns}_blocos_{nblocks}_linhas_{nlines}_palavras_{nwords}.ppm"
+    print(f"INFO: wrote final output to `{final_image_path}`.")
     pim.write_ppm_file(
-        f"./group_{GROUP_NUMBER}_detected_colunas_{ncolumns}_blocos_{nblocks}_linhas_{nlines}_palavras_{nwords}.ppm",
+        final_image_path,
         orig,
     )
     return nwords, nlines, ncolumns, nblocks
