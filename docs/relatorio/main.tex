@@ -95,29 +95,38 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Introdução
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter{Introdução e Resultados} \label{introduction}
+\chapter{Introdução} \label{introduction}
 
-Neste trabalho, desenvolvemos um programa capaz de processar imagens binárias no formato PBM ASCII (PGM tipo P1), contendo texto dos tipos e tamanhos de fontes, variando de 8 à 40. Conseguimos determinar o básico do trabalho que são o número de linhas e palavras no texto e os retangulos dessas palavras, gerando uma imagem de saída com esses retangulos. Além disso, nosso grupo implementou mais funcionalidades, como a detecção de colunas e blocos (ou paragrafos) do texto, utilizando o conceito de distância alinhada, includindo a \textit{bouding box} (bbox) desses blocos e linhas que indicam as colunas. Também foi feito a detecção dos das bbox dos caracteres quer formam as palavras encontradas. Aprós isso é feito uma ánalise de similaridades entre as imagem de letras padrões e as letras encontradas nessa detecção através template matching \cite[12.2]{gonzalez2008digital}. O template matching não gerou bons reconhecimentos, mesmo após testar diferentes variações como desconderar a igualdade de pixels pretos ou brancos.
+Neste trabalho, desenvolvemos um programa destinado ao processamento de imagens binárias no formato PBM ASCII (tipo P1), contendo texto em diferentes tipos e tamanhos de fontes, variando de 8 a 40. Inicialmente, focamos em tarefas básicas, como a contagem do número de linhas e palavras no texto, além da identificação e marcação dos retângulos que envolvem essas palavras, resultando em uma imagem de saída com esses retângulos destacados.
 
-Adicionalmente, para ilustrar nossos resultados de forma mais interativa, geramos uma série de imagens intermediárias que mostram o processo de detecção de blocos, colunas, palavras, e linhas destacando as regiões por um retangulo de diferentes cores. O formato dessas imagems é P3 (ascii RGB). Essas imagens foram usadas em sequencia de frames para gerar um video de saída auxiliando na depuração e compreensão do comportamento do algoritmo usando o programa de linha de commando ``ffmpeg``.
+Além disso, nosso grupo implementou funcionalidades adicionais, incluindo a detecção de colunas e blocos (paragrafos) de texto, utilizando o conceito de distância alinhada. Essa abordagem resulta nas \textit{bounding boxes} desses blocos, que são retângulos que englobam esses paragrafos, juntamente com retas que indicam as colunas identificadas. Também realizamos a detecção das \textit{bounding boxes} dos caracteres que compõem as palavras encontradas. Posteriormente, conduzimos uma análise de similaridade entre as imagens de letras padrões e as letras detectadas, utilizando o método de \textit{template matching} \cite[12.2]{gonzalez2008digital}. No entanto, o \textit{template matching} não obteve resultados satisfatórios, mesmo após testarmos diferentes abordagens, como a desconsideração da igualdade de pixels pretos ou brancos.
+
+Adicionalmente, para ilustrar de forma mais interativa nossos resultados, geramos uma série de imagens intermediárias que mostram o processo de detecção de blocos, colunas, palavras e linhas, destacando as regiões com retângulos de diferentes cores. O formato dessas imagens é P3 (ASCII RGB). Elas foram usadas sequencialmente como \textit{frames} para gerar um vídeo de saída, auxiliando na depuração e compreensão do comportamento do algoritmo, usando o programa de linha de comando ''\texttt{ffmpeg}``.
 
 O processamento envolve filtro mediano e, principalmente, dialtação. Também envolve os conceitos de connectividade para encontrar as palavras. A nossa abordagem é dinamica, baseado na altura das palavras mudamos os parametros enquanto o programa roda. Desse modo é possivel identificar estruturas de texto em diferentes alinhamentos, como justificado, esquerda, centro e direita, além de lidar com diferentes tamanhos e estilos de fonte, incluindo Comic Sans, Impact, Cascadia Code, Arial e Times New Roman. Um exemplo de video gerado pode ser encontrado em \url{https://youtu.be/uA45GeodGss?si=ZOgsA2av7EKZeG69}.
 
-Decidimos começar brevemente com os resultados (\autoref{ch-resultados}). Em seguida no \autoref{ch-notas} com intruções e notas sobre o projeto o qual inclui os passoes necessários para execução e as definição das imagem teste de entrada. No \autoref{ch-detalhes}, damos detalhes sobre os algoritmos implementados. Por fim, o \autoref{ch-conclusão} discute sobre possiveis melhorias e palavras finais de conclusão.
+Decidimos começar brevemente com os resultados (\autoref{ch-resultados}). Em seguida, \autoref{ch-notas}, apresentamos instruções e observações sobre o projeto, incluindo os passos necessários para a execução e as definições das imagens de teste de entrada. No \autoref{ch-detalhes}, fornecemos detalhes sobre os algoritmos implementados. Por fim, o \autoref{ch-conclusao} discute possíveis melhorias e conclui o trabalho.
+
 
 
 \chapter{Resultados} \label{ch-resultados}
- Os resultados desse projeto podem ser bem entendidos pelas imagens coloridas geradas, por isso, os próximos parafos discutem a saída gerada por este projeto para diferentes entradas. Na \autoref{cascadia} temos o resultado gerado no projeto para a entrada de um texto na fonte Cascadia Code em negrito de tamanho 10, alinhado à esquerda. Essa imagem tem baixa resolução e vem com ruídos. Mesmo assim o nosso trabalho conseguiu identificar as bbxoes das palavras, mesmo quando as letras possuvem alturas diferentes. Os retangulos em vermelho indicam essas bboxes das palavras encontradas. A linha em amarelo é feita pelo algortimo todas vez que encontra o começo de  uma coluna. Em verde está o agrupamento dos blocos ou paragrafos que o nosso trabalho conseguiu encontrar. Especificamente para essa entrada, o algoritmo encontrou 5 blocos, 2 colunas, 42 linhas e 395 palavras. Com a mesma fonte mas de tamanha 16, e centralizado, temos outro resultado na \autoref{cascadia16}, nesse encontramos 2 colunas, 4 blocos, 38 linhas e 226 palavras.
+Os resultados desse projeto podem ser bem entendidos pelas imagens coloridas geradas. Por isso, os próximos parágrafos discutem a saída gerada por este projeto para diferentes entradas.
 
-Na \autoref{timesnewroman}, ja mudamos a fonte para Time News Roman, e ainda está em itálico. Nesse entrada já pulamos para quartro colunas e tamanho 18 de fonte. No resultado foi encontrado 4 colunas, 6 blocos, 38 linhas e 197 palavras. O correto deveria ser 196 palavras, o restante está correto. Pulamos para uma nova fonte chamada Impact de tamanho 40, que é um grande salto dos outros casos. Neste, o algortimo encontra 2 colunas, 2 blocos, 18 linhas e palavras 47 palavras. O correto deveria ser 46 palavras, o restante está correto.
+Na \autoref{cascadia}, apresentamos o resultado obtido para a entrada de um texto na fonte Cascadia Code em negrito de tamanho 10, alinhado à esquerda. Mesmo diante de uma imagem com baixa resolução e ruídos, nosso trabalho conseguiu identificar as \textit{bounding boxes} das palavras, inclusive quando as letras possuem alturas diferentes. Os retângulos em vermelho indicam essas \textit{bounding boxes} das palavras encontradas, enquanto a linha em amarelo é traçada pelo algoritmo cada vez que encontra o início de uma coluna. Já os agrupamentos dos blocos ou parágrafos encontrados estão destacados em verde.
 
-Ademais, foram realizados teste com fonte Arial, com exemplos tanto providos pela professor Beatriz, quanto criados pelo grupo. Um exemplo desses resultados pode ser ilutrado pela \autoref{arial}, nesse o texto é justificado com 3 colunas e tamanho 12. O algortimo encontrou tudo corretamente, com 557 palavras e 52 linhas.  A \autoref{comi} inclue o resultado para um exemplo com letras de tamanho 8 e fonte Comic Sans, a menor testada no projeto. Por fim, demos upload da coleção de videos gerados por este trabalho com  diferentes fontes e tamanhos testados que pode ser encontrado no youtube neste link: \url{https://www.youtube.com/watch?v=uA45GeodGss}.
+Especificamente para essa entrada, o algoritmo identificou 5 blocos, 2 colunas, 42 linhas e 395 palavras. Por outro lado, ao utilizar a mesma fonte, mas com tamanho 16 e alinhamento centralizado, obtemos um resultado distinto, conforme observado na \autoref{cascadia16}. Nesse caso, foram encontradas 2 colunas, 4 blocos, 38 linhas e 226 palavras. Em ambos casos, estão corretos em todos os quesitos.
 
-Também houve a detecção de caracteres, os resultados te encontrar o retangulos dos caracteres numa dada palavra funciona perfeitamente, até onde pudemos testar, pois letras são conectadas, então basta utilizar a mesma função de conectividade usada pra encontrar as palavras, mas sem fazer dilatação das imagens, pois não queremos juntas as letrar e sim manter-as separadas. A \autoref{chars} mostra um exemplo de bboxes encontrada para as letras num palava encontrada.
+
+Na \autoref{timesnewroman}, mudamos a fonte para Times New Roman e alteramos para itálico. Nessa entrada, saltamos para quatro colunas e tamanho de fonte 18. O resultado mostrou 4 colunas, 6 blocos, 38 linhas e 197 palavras, embora o correto devesse ser 196 palavras, sendo o restante correto. Em seguida, experimentamos com a fonte Impact (ver \autoref{impact}), aumentando significativamente o tamanho para 40. Nesse caso, o algoritmo encontrou 2 colunas, 2 blocos, 18 linhas e 47 palavras, embora o correto fosse 46 palavras, mantendo o restante correto.
+
+Além disso, realizamos testes com a fonte Arial, utilizando exemplos fornecidos pela professora Beatriz, bem como criados pelo grupo. Um exemplo desses resultados pode ser visualizado na \autoref{arial}, onde o texto está justificado em 3 colunas com tamanho de fonte 12. O algoritmo identificou corretamente 3 colunas, 8 paragrafos, 557 palavras e 52 linhas. Já na \autoref{comic}, apresentamos o resultado de um exemplo com letras de tamanho 8 e fonte Comic Sans, a menor testada no projeto. Por fim, fizemos o upload da coleção de vídeos gerados por este trabalho, demonstrando diferentes fontes e tamanhos testados, disponíveis no YouTube neste link: \url{https://www.youtube.com/watch?v=uA45GeodGss}.
+
+
+Também realizamos a detecção de caracteres, onde os resultados para encontrar os retângulos dos caracteres em uma dada palavra funcionam perfeitamente, até onde pudemos testar. Isso ocorre porque as letras são conectadas, então podemos usar a mesma função de conectividade usada para encontrar as palavras, mas sem fazer dilatação das imagens, mantendo assim as letras separadas. Um exemplo das bounding boxes encontradas para as letras em uma palavra pode ser visualizado na \autoref{chars}.
 
 
 \begin{figure}[htb]
-        \caption{\label{char} \small Exemplos de caracteres detectados para as palavras nesse, tremenedo e volta. }
+        \caption{\label{chars} \small Exemplos de caracteres detectados para as palavras nesse, tremenedo e volta. }
         \begin{center}
             \includegraphics[scale=0.55]{./images/ocr.png}
         \end{center}
@@ -125,7 +134,7 @@ Também houve a detecção de caracteres, os resultados te encontrar o retangulo
 \end{figure}
 
 
-\begin{figure}[H]
+\begin{figure}[htb]
         \caption{\label{cascadia} \small Cacadia Code em negrito, com 10 de tamanho, 2 colunas e 5 blocos de texto. A entrada possue baixa resolução e ruídos. }
         \begin{center}
             \includegraphics[scale=0.55]{./images/cascadia_code_10_detected_colunas_2_blocos_5_linhas_42_palavras_395.png}
@@ -133,7 +142,7 @@ Também houve a detecção de caracteres, os resultados te encontrar o retangulo
   \legend{ \small Fonte: Autor.}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[htb]
         \caption{\label{cascadia16} \small Cacadia Code centralizado, com 16 de tamanho, 2 colunas e 4 blocos de texto. }
         \begin{center}
             \includegraphics[scale=0.25]{./images/cascadia_code_centralizado_tamanho_16_colunas_2_blocos_4_linhas_38_palavras_226.png}
@@ -141,7 +150,7 @@ Também houve a detecção de caracteres, os resultados te encontrar o retangulo
   \legend{ \small Fonte: Autor.}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[htb]
         \caption{\label{timesnewroman} \small Times News Roman em itálico, com 18 de tamanho, com 4 colunas, 6 blocos de texto.}
         \begin{center}
         \end{center}
@@ -150,7 +159,7 @@ Também houve a detecção de caracteres, os resultados te encontrar o retangulo
 \end{figure}
 
 
-\begin{figure}[H]
+\begin{figure}[htb]
   % impact_esquerda_tamanho_40_colunas_2_blocos_2_linhas_18_palavras_46
         \caption{\label{impact} \small Impact com tamanho 40, 2 colunas e 2 blocos de texto. }
         \begin{center}
@@ -159,7 +168,7 @@ Também houve a detecção de caracteres, os resultados te encontrar o retangulo
   \legend{ \small Fonte: Autor.}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[htb]
         \caption{\label{comic} \small Comic Sans centralizado, com 8 de tamanho, 2 colunas e 5 blocos de texto.}
         \begin{center}
             \includegraphics[scale=0.25]{./images/comic_sans_ms_bold_centralizado_tamanho_8_colunas_2_blocos_5_linhas_39_palavras_384.png}
@@ -167,7 +176,7 @@ Também houve a detecção de caracteres, os resultados te encontrar o retangulo
   \legend{ \small Fonte: Autor.}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[htb]
         \caption{\label{arial} \small Arial justificado, com 12 de tamanho, 3 colunas e 8 blocos de texto.}
         \begin{center}
             \includegraphics[scale=0.25]{./images/arial_justificado_tamanho_12_colunas_3_blocos_8_linhas_52_palavras_557.png}
@@ -179,17 +188,19 @@ Também houve a detecção de caracteres, os resultados te encontrar o retangulo
 \chapter{Instruções \& Observações sobre o Projeto}
 \label{ch-notas}
 
-O repositório do projeto pode ser encontrado através do link \url{https://github.com/evertonse/pim}. O método proposto está implementado em Python e pode ser executado a partir da pasta raiz do projeto. Primeiro, certifique-se de ter o repositório do projeto clonado ou baixado. Em seguida, na linha de comando, navegue até a pasta raiz do projeto e execute o seguinte comando, substituindo \texttt{caminho/para/imagem.pbm} pelo caminho da imagem que deseja processar:
+Primeiramente, certifique-se de ter baixado ``\texttt{.zip}'' ou clonado o repositório do projeto, o qual pode ser encontrado através do link \url{https://github.com/evertonse/pim}. Verifique se possui os requisitos listados na \autoref{sec-req}. Em seguida, na linha de comando, navegue até a pasta raiz do projeto e execute o seguinte comando, substituindo \texttt{caminho/para/imagem.pbm} pelo caminho da imagem que deseja processar:
 
 \begin{verbatim}
 $ python3 src/main.py caminho/para/imagem.pbm
 \end{verbatim}
 
-Exemplo de caminho imagem pode ser:
+Exemplo de imagem usada pode ser:
 \begin{verbatim}
-python3 src/main.py assets/grupo_13_arial_esquerda_tamanho_16_colunas_2_blocos_4_linhas_39_palavras_318.pbm
+$ python3 src/main.py assets/grupo_13_arial_esquerda_tamanho
+_16_colunas_2_blocos_4_linhas_39_palavras_318.pbm
 \end{verbatim}
 
+\subsection{Formato das Imagems de Teste Criadas pelo Grupo}
 Se nenhuma imagem for fornecida, será usada uma imagem padrão. Imagens de exemplo adicionais geradas pelo nosso grupo podem ser encontradas na pasta "\texttt{assets}". Essas imagens seguem o padrão adaptado do documento PreOCR, pois precisamos identificar mais detalhes sobre a imagem. Seja $F$, $T$, $C$, $B$, $L$ e $P$ variáveis que representam informações sobre a fonte (tipo) e se é justificado, centralizado, etc., tamanho, número de colunas, número de linhas, número de blocos e número de palavras, respectivamente. Assim, o nome das imagens de teste segue o padrão \texttt{grupo\_13\_F\_tamanho\_T\_colunas\_C\_blocos\_B\_linhas\_L\_palavras\_P}. Um exemplo é:
 
 \begin{itemize}
@@ -197,7 +208,7 @@ Se nenhuma imagem for fornecida, será usada uma imagem padrão. Imagens de exem
     colunas\_2\_blocos\_4\_linhas\_39\_palavras\_318}.
 \end{itemize}
 
-\section{Requisitos}
+\section{Requisitos} \label{sec-req}
 \begin{itemize}
   \item É necessário ter o Python instalado para executar o script. A versão testada foi 3.10 e 3.11, mas possivelmente pega em versões superiores à 3.4
   \item Opcionalmente se a ferramenta \texttt{ffmpeg} for instalada e esteja disponível no caminho do sistema o projeto irá gerar vídeos. No Ubuntu, \texttt{ffmpeg} pode ser instalado usando \texttt{sudo apt install ffmpeg} ou \texttt{sudo snap install ffmpeg}.
@@ -261,9 +272,9 @@ INFO: wrote final output to `./group_13_detected_colunas_2_blocos_5_linhas_42_pa
 \end{codigo}
 
 
-\chapter{Métodos e Implementações}\label{ch-detalhes}
+\chapter{Métodos, Parametros e Implementações}\label{ch-detalhes}
 
-Neste trabalho, aplicamos técnicas de processamento de imagem para detectar e analisar palavras, linhas, colunas e blocos em documentos de texto digitalizados. Para alcançar esse objetivo, utilizamos operações de dilatação e fechamento, juntamente com a detecção de componentes conectados, o parametros são especificados na \autoref{parametros}. Criamos elementos estruturantes personalizados para realizar operações específicas, como a detecção de palavras e a segmentação de blocos de texto. Para remoção de ruídos usamos o filtro mediana. Há uma dilatação condicional da imagem, se necessário, com base na altura média dos componentes conectados (palavras) já filtrados.
+Neste trabalho, aplicamos técnicas de processamento de imagem para detecção e análise de palavras, linhas, colunas e blocos em documentos de texto. Para alcançar esse objetivo, utilizamos operações de dilatação e fechamento, juntamente com a detecção de componentes conectados, cujos parâmetros são especificados na \autoref{parametros}. Criamos elementos estruturantes personalizados para realizar operações específicas, como a detecção de palavras e a segmentação de blocos de texto. Além disso, para remoção de ruídos, aplicamos o filtro mediana. Implementamos também uma dilatação condicional da imagem, quando necessário, com base na altura média dos componentes conectados (palavras) já filtrados.
 
 \section{Parâmetros} \label{parametros}
 Nesta seção, apresentamos os parâmetros utilizados nos algoritmos, incluindo os elementos estruturantes de dilatação e fechamento, com diferentes tamanhos e formatos. Além disso, destacamos variáveis de limiar que são ajustadas para alterar o comportamento do algoritmo, adaptando-o às características da imagem sendo processada.
@@ -319,7 +330,6 @@ Nesta seção, apresentamos os parâmetros utilizados nos algoritmos, incluindo 
 
 
 \section{Detalhes} 
-
 
 O algoritmo inicia lendo a imagem de entrada e realizando pré-processamento, o qual inclui a aplicação do filtro da mediana (chamado de \texttt{median\_blur} no código) e a inversão das cores. Essas etapas têm como objetivo remover possíveis ruídos, como o ruído do tipo sal e pimenta, como ilustrado na \autoref{ruidos}. Como os ruídos são confirmados ter tamanho máximo de 1 pixel, um filtro $3 \times 3$ é suficiente. A inversão da imagem é realizada para facilitar a aplicação de algoritmos morfológicos, como a dilatação.
 
@@ -633,7 +643,7 @@ def understandable_median_blur(image, filter_size=3):
 
 \subsubsection{Contagens}
 
-A contagem de linhas, proposto no \autoref{cod-linecount}, verifica se a lista de caixas delimitadoras está vaziam, depois as \textit{bounding boxes} ordenadas verticalmente com base na coordenada y. Para cada \textit{bounding box}, calcula-se a sobreposição vertical com a anterior. Se a sobreposição for menor que uma fração mínima, contamos uma nova linha.
+A contagem de linhas, proposto no \autoref{cod-linecount}, verifica se a lista de caixas delimitadoras está vaziam, depois as \textit{bounding boxes} ordenadas verticalmente com base na coordenada y. Para cada \textit{bounding box}, calcula-se a sobreposição vertical com a anterior. Se a sobreposição for menor que uma fração mínima, contamos uma nova linha. Na \autoref{fig-linecount}, temos uma represetação do retangulo da linha em uma dada iteração desse algoritmo.
 
 O algoritmo para contar colunas (\autoref{cod-columncount}) é semelhante ao de linhas, mas agora classificamos os retangulo horizontalmente em vez de verticalmente. Para cada retângulo ordenado, verificamos se sua coordenada x do canto inferior esquerdo é maior do que a coordenada x do canto inferior direito da caixa mais à direita encontrada até o momento (\texttt{max\_right}). Se for, consideramos isso como o início de uma nova coluna. Além disso, desenhamos uma linha vertical indicando o início da nova coluna na imagem de vídeo.
 
@@ -662,6 +672,14 @@ def count_lines(bboxes, orig):
 \end{lstlisting}
 \end{codigo}
 
+
+\begin{figure}[htb]
+        \caption{\label{fig-linecount} \small Frame do video mostrando o que o algortimo conta como linha. }
+        \begin{center}
+            \includegraphics[scale=0.55]{./images/cascadia_line.png}
+        \end{center}
+  \legend{ \small Fonte: Autor.}
+\end{figure}
 
 \begin{codigo}[h]
   \caption{\small Contagem de colunas.}
@@ -692,7 +710,7 @@ def count_columns(bboxes, orig):
 
 
 
-\chapter{Conclusão}
+\chapter{Conclusão} \label{ch-conclusao}
 
 Com base nos resultados obtidos, é possível afirmar que o desempenho do nosso algoritmo foi bastante satisfatório. Ele se mostrou eficaz para diversas fontes e tamanhos de texto, independentemente de estarem justificados, centralizados, alinhados à direita ou à esquerda. Além disso, funcionou igualmente bem com imagens de resoluções variadas, tanto baixas quanto altas, demonstrando uma boa robustez. A utilização do filtro da mediana mostrou-se suficiente para lidar com uma quantidade considerável de ruído na imagem. A estratégia de realizar a dilatação horizontal foi uma sacada importante que contribuiu significativamente para a melhoria da conectividade entre os caracteres.
 
