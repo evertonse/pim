@@ -350,14 +350,18 @@ A abordagem do algoritmo envolve o uso de um elemento estruturante, conhecido co
 
 \subsection{Componentes Conectados}
 
-Podemos perceber que as operações de dilatação horizontal realmente melhoraram a conectividade entre caracteres adjacentes. Esses componentes conectados são as palavras individuais dentro da imagem. O conceito de componentes conectados é baseado em grafos, aplicável a imagens binárias, onde os pixels brancos representam os nós. Existem diferentes tipos de conectividade. Se considerarmos apenas os vizinhos de um pixel como à esquerda, à direita, acima e abaixo, temos o que chamamos de 4-conectividade \cite[2.5.2 Adjacency, Connectivity, Regions, and Boundaries]{gonzalez2008digital}. Ao adicionar as diagonais, temos a 8-conectividade.
 
-O algoritmo apresentado no \autoref{cod-findcomp} é usado para encontrar esses componentes conectados e baseia-se em uma busca em profundidade, marcando os pixels visitados. A busca continua até não encontrar mais caminhos na imagem, considerando também as diagonais. Quando não há mais caminhos a serem explorados, o conjunto de pixels visitados forma um componente conectado. Este processo é repetido até que todos os componentes tenham sido identificados, atualizando os pontos mais à esquerda inferior e mais à direita superior do componente que é a \textit{bounding box} (retangulo) da palavra. Posteriomente, é desenhado um retangulo ao redor dessas palavras na imagem de saída. Opcionalmente, as palavras separadas podem ser escritas em uma nova imagem, visando a utilização posterior em tentativas de reconhecimento óptico de caracteres (OCR). 
+As operações de dilatação horizontal notavelmente aprimoraram a conectividade entre caracteres adjacentes na imagem. Esses conjuntos conectados de pixels representam as palavras individuais dentro da imagem. O conceito de componentes conectados é fundamentado em grafos e pode ser aplicado a imagens binárias, onde os pixels brancos correspondem aos nós. Existem diferentes tipos de conectividade. Se considerarmos apenas os vizinhos de um pixel como à esquerda, à direita, acima e abaixo, temos o que chamamos de 4-conectividade \cite[2.5.2 Adjacency, Connectivity, Regions, and Boundaries]{gonzalez2008digital}. Ao adicionar as diagonais, obtemos a 8-conectividade.
 
-Além disso, após a identificação dos componentes de texto, é realizada a filtragem para eliminar as \textit{bounding boxes} correspondentes à pontuação (virgulas, pontos) e manter apenas aquelas relacionadas às palavras. O \autoref{cod-group_bboxes} mostra como as palavras são então agrupadas em blocos com base em sua proximidade espacial. Para ilustrar  o processo de descoberta desses blocos, um vídeo é gerado para visualizar interativamente as etapas do algoritmo. 
+O algoritmo descrito no \autoref{cod-findcomp} identifica esses componentes conectados e se baseia em uma busca em profundidade, marcando os pixels visitados. A busca continua até que não haja mais caminhos a serem explorados na imagem, considerando também as diagonais, se \textit{connectivity} for igual 8). Quando não há mais caminhos a serem percorridos, o conjunto de pixels visitados forma um componente conectado. Esse processo é repetido até que todos os componentes tenham sido identificados, atualizando os pontos mais à esquerda inferior e mais à direita superior do componente, formando a \textit{bounding box} da palavra.
+
+Em seguida, um retângulo é desenhado ao redor dessas palavras na imagem de saída. Opcionalmente, as palavras isoladas podem ser escritas em uma nova imagem, para uso posterior em tentativas de reconhecimento óptico de caracteres (OCR). Após a identificação dos componentes de texto, é realizada uma filtragem para eliminar as \textit{bounding boxes} correspondentes à pontuação (vírgulas, pontos) e manter apenas aquelas associadas às palavras.
+
+O \autoref{cod-group_bboxes} ilustra como as palavras são então agrupadas em blocos com base em sua proximidade. A distância considerada é a menor diferença possível entre as duas \textit{bounding boxes}; se estiverem sobrepostas, então a distância é zero. Finalmente, a função \texttt{group\_bboxes} retorna a lista resultante, que contém todos os retangulos agrupados com base na distância máxima especificada; se a distância for maior, é considerado parte de outro grupo. Neste trabalho, essa distância máxima é encontrada de maneira dinâmica, executando o algoritmo uma vez para encontrar uma certa altura das palavras e, em seguida, executando novamente com essa informação adquirida. Para visualizar de forma interativa as etapas do algoritmo na descoberta desses blocos, é gerado um vídeo.
+
 
 \begin{codigo}[h]
-  \caption{\small .}
+  \caption{\small Função para encontrar componentes conectados, considerando o tipo de conectividade.}
  \label{cod-findcomp}
 \begin{lstlisting}[language=python]
 def find_connected_components_bboxes(image, min_area=0, connectivity=8):
@@ -402,7 +406,7 @@ def find_connected_components_bboxes(image, min_area=0, connectivity=8):
 \end{codigo}
 
 \begin{codigo}[h]
-  \caption{\small.}
+  \caption{\small Agrupamento dos retangulos.}
  \label{cod-group_bboxes}
 \begin{lstlisting}[language=python]
 def group_bboxes(bboxes, max_distance, image) -> list[list]:
@@ -441,13 +445,16 @@ def group_bboxes(bboxes, max_distance, image) -> list[list]:
 \subsection{Detecção e Reconhecimento de Caracteres}
 
 
-O processo de reconhecimento de caracteres envolve três etapas principais: a detecção dos caracteres na imagem, a correspondência desses caracteres com os modelos predefinidos. O reconhecimento desses caracteres pode ser feito por correspondência de modelos (do inglês \textit{template matching}) \cite[12.2]{gonzalez2008digital}.  Durante o processo, as \textit{bounding boxes} são geradas para cada caractere detectado. O \autoref{cod-ocr} carrega modelos de letras predefinidos do diretório \texttt{./assets/letters/}. Os modelos são imagens binárias de letras individuais, como "v", "o", "l" e "t". Cada letra é invertida para garantir que os pixels de interesse (brancos) tenham o valor 255 e os pixels de fundo (pretos) tenham o valor 0. A imagem a ser comparada é a subimagem que contém o caractere que conseguimos detectar; em seguida, as \textit{bounding boxes} são ordenadas da esquerda para a direita, na ordem de leitura. Este recorte da letra é redimensionado para ter o mesmo tamanho das letras de referência. Para cada letra de referência, calculamos a similaridade entre a letra recortada e o modelo. A similaridade é medida contando o número de pixels brancos iguais nas duas imagens. A letra com a maior similaridade é considerada a melhor correspondência para a região.
+O processo de reconhecimento de caracteres é composto por três etapas principais: a detecção dos caracteres na imagem, a correspondência desses caracteres com os modelos predefinidos e o reconhecimento. Durante essa sequência, as \textit{bounding boxes} são geradas para cada caractere detectado. O \autoref{cod-ocr} mostra esse processo. Nele é carregado modelos de letras predefinidos no diretório \texttt{./assets/letters/}. Esses modelos são imagens binárias de letras individuais, como "v", "o", "l" e "t", com cada letra invertida para garantir que os pixels de interesse (brancos) tenham o valor 255 e os pixels de fundo (pretos) tenham o valor 0. A imagem a ser comparada é a subimagem que contém o caractere detectado; em seguida, as \textit{bounding boxes} são ordenadas da esquerda para a direita, seguindo a ordem de leitura.
+
+Este recorte da letra é redimensionado para ter o mesmo tamanho das letras de referência. Para cada letra de referência, calcula-se a similaridade entre a letra recortada e o modelo. Essa similaridade é medida contando o número de pixels brancos iguais, na mesmas coordenadas nas duas imagens. A letra com a maior similaridade é considerada a melhor correspondência para a região.
+
 
 \begin{codigo}[h]
   \caption{\small Função para reconhecimento de caracteres.}
  \label{cod-ocr}
 \begin{lstlisting}[language=python]
-# Pacote OCR
+# Package OCR
 def string(img, letters):
     print(img.shape)
     orig = pim.convert_to_rgb(img)
@@ -484,22 +491,17 @@ def string(img, letters):
 
 % Ao longo do processo, o algoritmo incorpora várias otimizações e ajustes de parâmetros para se adaptar a diferentes tipos de imagens de entrada e layouts de texto. Por exemplo, parâmetros como tamanho do kernel e contagens de iteração são ajustados dinamicamente com base nas características da imagem de entrada, como tamanho do texto e níveis de ruído.
 
-
-
-
-
-
 \subsection{Operações Morfológicas}
 \subsubsection{Dilatação}
 
- A dilatação morfológica é útil para preencher pequenos espaços entre objetos. No \autoref{udilate}, a função `understandable\_dilate` implementa a dilatação de forma "compreensível", mais compativel com a definição dada em \cite[9.2.2 Dilation]{gonzalez2008digital}.
+ A dilatação morfológica é útil para preencher pequenos espaços entre objetos. No \autoref{udilate}, a função `understandable\_dilate` implementa a dilatação de forma "compreensível", mais compativel com a definição dada em \citeonline[9.2.2 Dilation]{gonzalez2008digital}.
 
- Nessa implementação a variável `kernel` representa o elemento estruturante, que define a forma e o tamanho da dilatação. Durante o processo, a imagem é percorrida pixel a pixel, e para cada pixel, verifica-se se pelo menos um dos pixels na vizinhança definida pelo kernel é branco (valor 255). Se pelo menos um dos pixels na vizinhança é branco, o pixel central é definido como branco (255) na imagem resultante. Caso contrário, o pixel central é definido como preto (0).
+ Nessa implementação a variável \texttt{kernel} representa o elemento estruturante, que define a forma e o tamanho da dilatação. Durante o processo, a imagem é percorrida pixel a pixel, e para cada pixel, verifica-se se pelo menos um dos pixels na vizinhança definida pelo kernel é branco (valor 255). Se pelo menos um dos pixels na vizinhança é branco, o pixel central é definido como branco (255) na imagem resultante. Caso contrário, o pixel central é definido como preto (0).
 
  Uma interepretação util é que o elemento estruturante define qual é a vizinhaça, onde tiver 1 no elemento indica que faz parte da vizinhaça, se tiver zero então não faz parte. Para cada x,y percorridos a imagem resultado é o máximo o valor de sua vizinhança definido pelo elemento estruturante.
 
 \begin{codigo}[h]
-  \caption{\small .}
+  \caption{\small Dilatação.}
  \label{udilate}
 \begin{lstlisting}[language=python]
 def understandable_dilate(image, kernel):
@@ -546,15 +548,12 @@ def understandable_dilate(image, kernel):
   % Eu dispus dessa maneira pra mostra que sei fazer todas as diferentes implementa├º├╡es,
   % mas pra ficar mais rapido e interativo ├⌐ usado o fast_dilate2.
   % NOTE: Qualquer uma dessas implementa├º├╡es funciona para os propositos deste trabalho
+No \autoref{fdilate2}, a função \texttt{fast\_dilate2} implementa uma dilatação morfológica mais rápida, aproveitando as operações de matriz do NumPy. A imagem é expandida com um preenchimento adequado para evitar problemas de borda durante a aplicação (o elemento estruturante é chamado de \texttt{kernel} no código). Em seguida, usando a função \texttt{np.maximum}, calculamos o valor máximo elemento a elemento da matriz entre a imagem resultante e o subconjunto da imagem com padding.
 
-No \autoref{fdilate2}, a função \texttt{fast\_dilate2} implementa uma dilatação morfológica mais rápida, aproveitando as operações de matriz do NumPy. A imagem é expandida com um preenchimento (\textit{padding}) adequado para evitar problemas de borda durante a aplicação (o elemento estruturante é chamado de kernel no código). Em seguida, o elemento estruturante é aplicado à imagem usando a função \texttt{np.maximum}, que calcula o máximo elemento a elemento entre a imagem resultante e o subconjunto da imagem com padding.
-
-A imagem resultante começa com entradas zeradas e, à medida que iteramos sobre a altura $j$ e a largura $i$ do elemento estruturante, aplicamos essa função maximum em um subconjunto diferente da imagem com padding, dependendo de $j$ e $i$. Aplicamos isso apenas se o elemento estruturante for maior ou igual a 1 na altura $j$ e largura $i$. Isso efetivamente realiza uma dilatação, onde o pixel central de uma vizinhança é definido como o valor máximo dessa vizinhança. No entanto, observe que a vizinhança depende do elemento estruturante, apenas onde os valores são 1 são considerados vizinhança.
-
-Ambas as implementações alcançam o mesmo resultado de dilatação morfológica, mas esta é mais eficiente devido ao uso de operações vetorizadas do NumPy. Isso resulta em uma execução mais rápida, especialmente em imagens grandes.
+Inicialmente, a imagem resultante é preenchida com entradas zeradas e, à medida que iteramos sobre a altura $j$ e a largura $i$ do elemento estruturante, aplicamos essa função \texttt{maximum} em um  \textbf{subconjunto diferente} da imagem com \textit{padding}, dependendo de $j$ e $i$ atual. Isso é feito apenas se o elemento estruturante for maior ou igual a 1 na altura $j$ e largura $i$. Isso efetivamente realiza uma dilatação, onde o pixel central de uma vizinhança é definido como o valor máximo dessa vizinhança. No entanto, observe que a vizinhança depende do elemento estruturante, apenas onde os valores são 1 são considerados vizinhança.
 
 \begin{codigo}[h]
-  \caption{\small.}
+  \caption{\small Ditalação mais rápida, usando operação de matriz.}
  \label{fdilate2}
 \begin{lstlisting}[language=python]
 def fast_dilate2(image, kernel):
@@ -587,55 +586,119 @@ def fast_dilate2(image, kernel):
 \end{lstlisting}
 \end{codigo}
 
+Ambas as implementações alcançam o mesmo resultado de dilatação morfológica, mas \texttt{fast\_dilate2} é mais eficiente devido ao uso de operações vetorizadas do NumPy. Isso resulta em uma execução mais rápida, especialmente em imagens grandes.
+
+
 \subsubsection{Erosão}
 
-A erosão segue a mesma ideia da dilatação, mas com a operação sendo o \texttt{minimum} no lugar do \textit{maximum}. A iteração começa com a imagem resultante com todas as entradas 1 no lugar de 0. Na versão \texttt{understandable} da erosão, apenas quando \textbf{todos os pixels} da imagem se alinham com o elementento estruturante é que o pixel central é setado como 1 no lugar de \textbf{pelo menos um}. Vale ressaltar que a erosão não é necessária para o funcionamento do projeto, pois mesmo sem \texttt{closing} ou \texttt{opening}, que implicitamente usam erosão, o algoritmo é robusto para os casos de teste mencionados na introdução. A função \texttt{opening} é a operação de abertura, que consiste em primeiro realizar uma erosão seguida de uma dilatação. É útil para remover pequenos ruídos e separar objetos próximos, mas nesse trabalho, removemos esses ruídos pelo filtro da mediana.
+A erosão segue o mesmo princípio da dilatação, mas com a operação sendo o \texttt{mínimo} no lugar do \texttt{máximo}. A iteração começa com a imagem resultante tendo todas as entradas definidas como 1 em vez de 0. Na versão \texttt{understandable} da erosão, apenas quando \textbf{todos os pixels} da imagem se alinham com o elemento estruturante é que o pixel central é definido como 1 no lugar de \textbf{pelo menos um}. Vale ressaltar que a erosão não é necessária para o funcionamento do projeto, pois mesmo sem \texttt{closing} ou \texttt{opening}, que usam implicitamente a erosão, o algoritmo é robusto para os casos de teste mencionados na introdução. A função \texttt{opening} é a operação de abertura, que consiste em primeiro realizar uma erosão seguida de uma dilatação. É útil para remover pequenos ruídos e separar objetos próximos, mas neste trabalho, removemos esses ruídos através do filtro da mediana.
 
+
+\subsubsection{Filtro Mediana}
+
+O \autoref{cod-mediana} implementa um filtro de mediana. Ele percorre cada pixel da imagem e substitui o valor do pixel pela mediana dos valores dos pixels em sua vizinhança, definida pelo tamanho do filtro. Isso ajuda a remover ruídos e detalhes pequenos.
+
+\begin{codigo}[h]
+  \caption{\small Implementação do filtro de mediana.}
+ \label{cod-mediana}
+\begin{lstlisting}[language=python]
+def understandable_median_blur(image, filter_size=3):
+    assert len(image.shape) == 2
+
+    result = image.copy()
+    height = image.shape[0]
+    width = image.shape[1]
+    for y in range(height):
+        for x in range(width):
+            colors = list()
+            for j in range(filter_size):
+                for i in range(filter_size):
+                    i_offset = i - filter_size // 2
+                    j_offset = j - filter_size // 2
+
+                    color = 0
+                    if (
+                        (x + i_offset) >= 0
+                        and (x + i_offset) < width
+                        and y + j_offset >= 0
+                        and y + j_offset < height
+                    ):
+                        color = image[y + j_offset, x + i_offset]
+                    colors.append(color)
+            colors.sort()
+            result[y, x] = colors[(len(colors) // 2)]
+    return result
+\end{lstlisting}
+\end{codigo}
 
 \subsubsection{Contagens}
-A contagem de linhas proposto baseia-se na análise de das bboxes que cercam as regiões de texto.
-Primeiro verifica se a lista de caixas delimitadoras está vazia. As caixas são ordenadas verticalmente com base na coordenada y. Para cada caixa, calcula-se a sobreposição vertical com a caixa anterior. Se a sobreposição for menor que uma fração mínima, a caixa é contada como uma nova linha. A cada interação criamos uma imagem intermediaria para geração do video, nele exibimos as bboxes realçando corretamente as linhas de texto.
 
-O algoritmo para contar colunas é similar ao de linhas, mas agora ordenamos pelo horizontal no lugar da vertical.
-Mantemos uma variavel para contar o número de colunas e max\_right para acompanhar a coordenada x do canto inferior direito da caixa mais à direita encontrada até o momento.
+A contagem de linhas, proposto no \autoref{cod-linecount}, verifica se a lista de caixas delimitadoras está vaziam, depois as \textit{bounding boxes} ordenadas verticalmente com base na coordenada y. Para cada \textit{bounding box}, calcula-se a sobreposição vertical com a anterior. Se a sobreposição for menor que uma fração mínima, contamos uma nova linha.
 
-Para cada caixa delimitadora ordenada, verifica-se se sua coordenada x do canto inferior esquerdo é maior do que a coordenada x do canto inferior direito da caixa mais à direita encontrada até o momento (max\_right). Se for, considera-se isso como o início de uma nova coluna e incrementa-se o contador de colunas (num\_columns). Também é desenhada uma linha vertical indicando o início da nova coluna na imagem de vídeo.
+O algoritmo para contar colunas (\autoref{cod-columncount}) é semelhante ao de linhas, mas agora classificamos os retangulo horizontalmente em vez de verticalmente. Para cada retângulo ordenado, verificamos se sua coordenada x do canto inferior esquerdo é maior do que a coordenada x do canto inferior direito da caixa mais à direita encontrada até o momento (\texttt{max\_right}). Se for, consideramos isso como o início de uma nova coluna. Além disso, desenhamos uma linha vertical indicando o início da nova coluna na imagem de vídeo.
 
-A coordenada x do canto inferior direito da caixa mais à direita (max\_right) é atualizada, se necessário.
+\begin{codigo}[h]
+  \caption{\small Contagem de linhas.}
+ \label{cod-linecount}
+\begin{lstlisting}[language=python]
+def count_lines(bboxes, orig):
+    if len(bboxes) == 0:
+        return 0
+    bboxes = sorted(bboxes, key=lambda bbox: (bbox[0], bbox[2]))
 
-No final, a imagem de vídeo atualizada é adicionada à lista video\_frames para visualização posterior, e o número total de colunas encontradas é retornado (num\_columns).
+    lines = 1
+    prev1, _, prev2, _ = bboxes[0]
+    xdiffs_bboxes = list()
+    for bbox in bboxes[1:]:
+        y1, _, y2, _ = bbox
+        overlap = max(0, min(prev2, y2) - max(prev1, y1))
+        if overlap > abs(prev1 - prev2) / 100:
+            continue
+        lines += 1
+        prev1 = y1
+        prev2 = y2
+
+    return lines
+\end{lstlisting}
+\end{codigo}
 
 
-Para agrupar os paragrafos ou blocos A função começa inicializando uma lista vazia chamada result para armazenar os grupos de caixas delimitadoras agrupadas.
+\begin{codigo}[h]
+  \caption{\small Contagem de colunas.}
+ \label{cod-columncount}
+\begin{lstlisting}[language=python]
+def count_columns(bboxes, orig):
+    # Sort by left x-coordinate
+    sorted_bboxes = sorted(bboxes, key=lambda bbox: bbox[1])
 
-Em seguida, inicializa uma lista chamada rest\_idxs que contém os índices de todas as caixas delimitadoras não agrupadas inicialmente.
+    num_columns = 0
+    max_right = float("-inf")
 
-Enquanto ainda houver índices na lista rest\_idxs, o algoritmo continua a iterar:
+    for bbox in sorted_bboxes:
+        _, left, _, right = bbox
 
-Ele retira um índice da lista rest\_idxs e o adiciona à lista close\_idxs, que representa o grupo de caixas delimitadoras próximas.
+        # If the left x-coordinate of the bounding box is greater than the current rightmost x-coordinate,
+        # it indicates the start of a new column
+        if left > max_right:
+            num_columns += 1
 
-Em seguida, calcula a distância entre a caixa delimitadora selecionada (bbox) e todas as outras caixas delimitadoras não agrupadas. Se a distância entre duas caixas delimitadoras for menor do que a max\_distance especificada ou se houver uma sobreposição significativa entre elas, as duas caixas são consideradas próximas o suficiente para serem agrupadas.
-
-Se uma caixa delimitadora for adicionada ao grupo, ela é removida da lista rest\_idxs, e a função recalcula a caixa delimitadora que envolve todas as caixas no grupo atualizado.
-
-Durante esse processo, a função também desenha retângulos em uma imagem de vídeo (representada por image) para visualização. Cada retângulo delimita o agrupamento de caixas delimitadoras.
-
-Após a conclusão do processo de agrupamento para um determinado grupo de caixas delimitadoras próximas, o grupo resultante é adicionado à lista result.
-
-Finalmente, a função retorna a lista result, que contém todos os grupos de caixas delimitadoras agrupadas com base na distância máxima especificada.
+        # Update current rightmost x-coordinate
+        if max_right < right:
+            max_right = right
+    return num_columns
+\end{lstlisting}
+\end{codigo}
 
 
 
 
 \chapter{Conclusão}
 
-@@
-Sumarização dos principais resultados e contribuições do trabalho.
-Reflexão sobre o aprendizado durante o desenvolvimento do programa.
-Sugestões para trabalhos futuros ou melhorias no programa.
+Com base nos resultados obtidos, é possível afirmar que o desempenho do nosso algoritmo foi bastante satisfatório. Ele se mostrou eficaz para diversas fontes e tamanhos de texto, independentemente de estarem justificados, centralizados, alinhados à direita ou à esquerda. Além disso, funcionou igualmente bem com imagens de resoluções variadas, tanto baixas quanto altas, demonstrando uma boa robustez. A utilização do filtro da mediana mostrou-se suficiente para lidar com uma quantidade considerável de ruído na imagem. A estratégia de realizar a dilatação horizontal foi uma sacada importante que contribuiu significativamente para a melhoria da conectividade entre os caracteres.
 
+A abordagem de utilizar alturas encontradas como heurística para decidir se novas operações morfológicas deveriam ser aplicadas também se mostrou eficaz, ampliando a capacidade do algoritmo de lidar com diferentes casos. No entanto, há espaço para explorar ainda mais heuristicas, como usar a distância média entre caracteres como limiar para decidir sobre a aplicação de operações de fechamento, ou estudar o espaço em branco entre as palavras. Uma outra possibilidade seria considerar uma porcentagem do tamanho das letras em relação à imagem inteira para tomar decisões.
 
-
+Embora a detecção de caracteres tenha funcionado bem, o método de \textit{template matching} não teve o mesmo desempenho. Esse aspecto merece uma investigação mais aprofundada para entender por que não foi eficaz para reconhecer os caracteres (deu muitas similaridades erradas). No entanto, mesmo com esse desafio, o projeto como um todo foi capaz de realizar uma série de tarefas interessantes e diversas, incluindo a criação de um vídeo para visualização das etapas do algoritmo e a implementação de algoritmos vetorizados, proporcionando um entendimento mais profundo e intuitivo desses processos morfológicos.
 
 \phantompart
 \bibliography{Bibliografia}
