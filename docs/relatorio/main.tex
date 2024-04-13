@@ -149,19 +149,19 @@
 Neste trabalho, desenvolvemos um programa destinado ao processamento de imagens binárias no formato PBM ASCII (tipo P1), contendo texto em diferentes tipos e tamanhos de fontes, variando de 8 a 40. Inicialmente, focamos em tarefas básicas, como a contagem do número de linhas e palavras no texto, além da identificação e marcação dos retângulos que envolvem essas palavras, resultando em uma imagem de saída com esses retângulos destacados.
 
 
-Além disso, nosso grupo implementou funcionalidades adicionais, incluindo a detecção de colunas e blocos (parágrafos) de texto, utilizando o conceito de distância alinhada. Essa abordagem resulta nas \textit{bounding boxes} desses blocos, que são retângulos que englobam esses parágrafos, juntamente com retas que indicam as colunas identificadas. Também realizamos a detecção \textit{bounding boxes} dos caracteres que compõem as palavras encontradas. Posteriormente, conduzimos uma análise de similaridade entre as imagens de letras padrões e as letras detectadas, utilizando o método de \textit{template matching} \cite[12.2]{gonzalez2008digital}. No entanto, o \textit{template matching} não obteve resultados satisfatórios, mesmo após testarmos diferentes abordagens, como a desconsideração da igualdade de pixels pretos ou brancos.
+Além disso, nosso grupo implementou funcionalidades adicionais, incluindo a detecção de colunas e blocos (parágrafos) de texto, utilizando o conceito de distância alinhada. Essa abordagem resulta nas \textit{bounding boxes} desses blocos, que são retângulos que englobam esses parágrafos, juntamente com retas que indicam as colunas identificadas. Também, realizamos a detecção das \textit{bounding boxes} dos caracteres que compõem as palavras encontradas. Posteriormente, conduzimos uma análise de similaridade entre as imagens de letras padrões e as letras detectadas, utilizando o método de \textit{template matching} \cite[12.2]{gonzalez2008digital}. No entanto, o \textit{template matching} não obteve resultados satisfatórios, mesmo após testarmos diferentes abordagens, como a desconsideração da igualdade de pixels pretos ou brancos.
 
 
 Adicionalmente, para ilustrar de forma mais interativa nossos resultados, geramos uma série de imagens intermediárias que mostram o processo de detecção de blocos, colunas, palavras e linhas, destacando as regiões com retângulos de diferentes cores. O formato dessas imagens é P3 (ASCII RGB). Elas foram usadas sequencialmente como \textit{frames} para gerar um vídeo de saída, auxiliando na depuração e compreensão do comportamento do algoritmo, usando o programa de linha de comando ``\texttt{ffmpeg}''.
 
 
-O processamento envolve filtro mediano e, principalmente, dilatação. Também envolve os conceitos de conectividade para encontrar as palavras. A nossa abordagem é dinâmica, baseado na altura das palavras mudamos os parâmetros enquanto o programa roda. Desse modo é possível identificar estruturas de texto em diferentes alinhamentos, como justificado, esquerda, centro e direita, além de lidar com diferentes tamanhos e estilos de fonte, incluindo Comic Sans, Impact, Cascadia Code, Arial e Times New Roman. Um exemplo de vídeo gerado pode ser encontrado em \url{https://youtu.be/uA45GeodGss?si=ZOgsA2av7EKZeG69}.
+O processamento envolve filtro mediano e, principalmente, dilatação. Também envolve os conceitos de conectividade para encontrar as palavras. A nossa abordagem é dinâmica, baseado na altura das palavras, mudamos os parâmetros enquanto o programa roda. Desse modo é possível identificar estruturas de texto em diferentes alinhamentos, como justificado, esquerda, centro e direita, além de lidar com diferentes tamanhos e estilos de fonte, incluindo Comic Sans, Impact, Cascadia Code, Arial e Times New Roman. Um exemplo de vídeo gerado pode ser encontrado em \url{https://youtu.be/uA45GeodGss?si=ZOgsA2av7EKZeG69}.
 
 
-Decidimos iniciar com uma breve apresentação dos resultados (\autoref{ch-resultados}). Em seguida, no \autoref{ch-notas}, fornecemos instruções e observações sobre o projeto, incluindo os passos necessários para a execução e as definições das imagens de teste de entrada. Posteriormente, no \autoref{ch-detalhes}, fornecemos detalhes sobre os algoritmos implementados. Por fim, o \autoref{ch-conclusao} discute possíveis melhorias e conclui o trabalho.
+Decidimos iniciar com uma breve apresentação dos resultados, que se encontra no \autoref{ch-resultados}. Em seguida, no \autoref{ch-notas}, fornecemos instruções e observações sobre o projeto, incluindo os passos necessários para a execução e as definições das imagens de teste de entrada. Posteriormente, no \autoref{ch-detalhes}, fornecemos detalhes sobre os algoritmos implementados. Por fim, o \autoref{ch-conclusao} discute possíveis melhorias e conclui o trabalho.
 
 
-Caso deseje uma visão mais sucinta, recomenda-se ver os resultados no \autoref{ch-resultados}, seguidos dos parâmetros na \autoref{sec-parametros}, e finalizar com a conclusão no \autoref{ch-conclusao}, e opcionalmente ver a deteção de caracteres na \autoref{sec-ocr}. Além disso, o vídeo gerado pelo grupo pode dar uma visão geral dos resultados de forma rápida (\url{https://youtu.be/uA45GeodGss?si=ZOgsA2av7EKZeG69}).
+Caso deseje uma visão mais sucinta, recomenda-se ver os resultados no \autoref{ch-resultados}, seguidos dos parâmetros na \autoref{sec-parametros} e finalizar com a conclusão no \autoref{ch-conclusao}; opcionalmente ver a deteção de caracteres na \autoref{sec-ocr}. Além disso, o vídeo gerado pelo grupo pode dar uma visão geral dos resultados de forma rápida (\url{https://youtu.be/uA45GeodGss?si=ZOgsA2av7EKZeG69}).
 
 
 
@@ -170,23 +170,20 @@ Caso deseje uma visão mais sucinta, recomenda-se ver os resultados no \autoref{
 Os resultados desse projeto podem ser bem entendidos pelas imagens coloridas geradas. Por isso, os próximos parágrafos discutem a saída gerada por este projeto para diferentes entradas.
 
 
-Na \autoref{cascadia}, apresentamos o resultado obtido para a entrada de um texto na fonte Cascadia Code em negrito de tamanho 10, alinhado à esquerda. Mesmo diante de uma imagem com baixa resolução e ruídos, nosso trabalho conseguiu identificar as \textit{bounding boxes} das palavras, inclusive quando as letras possuem alturas diferentes. Os retângulos em vermelho indicam essas \textit{bounding boxes} das palavras encontradas, enquanto a linha em amarelo é traçada pelo algoritmo cada vez que se encontra o início de uma coluna. Já os agrupamentos dos blocos ou parágrafos encontrados estão destacados em verde.
+Na \autoref{cascadia}, apresentamos o resultado obtido para a entrada de um texto na fonte \texttt{Cascadia Code} em negrito de tamanho 10, alinhado à esquerda. Mesmo diante de uma imagem com baixa resolução e ruídos, nosso trabalho consegue identificar as \textit{bounding boxes} das palavras, inclusive quando as letras possuem alturas diferentes. Os retângulos em vermelho indicam as palavras encontradas, enquanto as linhas em amarelo é traçada pelo algoritmo cada vez que se encontra o início de uma coluna. Já os agrupamentos dos blocos ou parágrafos encontrados estão destacados em verde.
 
 
-Especificamente para essa entrada, o algoritmo identificou 5 blocos, 2 colunas, 42 linhas e 395 palavras. Por outro lado, ao utilizar a mesma fonte, mas com tamanho 16 e alinhamento centralizado, obtemos um resultado distinto, conforme observado na \autoref{cascadia16}. Nesse caso, foram encontradas 2 colunas, 4 blocos, 38 linhas e 226 palavras. Em ambos casos, estão corretos em todos os quesitos.
-
-
-
-
-Na \autoref{timesnewroman}, mudamos a fonte para Times New Roman e alteramos para itálico. Nessa entrada, saltamos para quatro colunas e tamanho de fonte 18. O resultado mostrou 4 colunas, 6 blocos, 38 linhas e 197 palavras, embora o correto devesse ser 196 palavras, sendo o restante correto. Em seguida, experimentamos com a fonte Impact (ver \autoref{impact}), aumentando significativamente o tamanho para 40. Nesse caso, o algoritmo encontrou 2 colunas, 2 blocos, 18 linhas e 47 palavras, embora o correto fosse 46 palavras, mantendo o restante correto.
-
-
-Além disso, realizamos testes com a fonte Arial, utilizando exemplos fornecidos pela professora Beatriz, bem como criados pelo grupo. Um exemplo desses resultados pode ser visualizado na \autoref{arial}, onde o texto está justificado em 3 colunas com tamanho de fonte 12. O algoritmo identificou corretamente 3 colunas, 8 parágrafos, 557 palavras e 52 linhas. Já na \autoref{comic}, apresentamos o resultado de um exemplo com letras de tamanho 8 e fonte Comic Sans, a menor testada no projeto. Por fim, fizemos o upload da coleção de vídeos gerados por este trabalho, demonstrando diferentes fontes e tamanhos testados, disponíveis no YouTube neste link: \url{https://www.youtube.com/watch?v=uA45GeodGss}.
+Especificamente para essa entrada, o algoritmo identificou 5 blocos, 2 colunas, 42 linhas e 395 palavras. Por outro lado, ao utilizar a mesma fonte, mas com tamanho 16 e alinhamento centralizado, obtemos um resultado distinto, conforme observado na \autoref{cascadia16}. Nesse caso, foram encontradas 2 colunas, 4 blocos, 38 linhas e 226 palavras. Em ambos os casos, todos os quesitos estão corretos.
 
 
 
+Na \autoref{timesnewroman}, mudamos a fonte para \texttt{Times New Roman} e alteramos para itálico. Nessa entrada, saltamos para quatro colunas e tamanho de fonte 18. O resultado mostrou corretamente 4 colunas, 6 blocos, 38 linhas e 197 palavras, embora o correto devesse ser 196 palavras. Em seguida, experimentamos a fonte \texttt{Impact} (ver \autoref{impact}), aumentando significativamente o tamanho para 40. Nesse caso, o algoritmo encontrou 2 colunas, 2 blocos, 18 linhas e 47 palavras, apesar do correto ser 46 palavras.
 
-Também realizamos a detecção de caracteres, onde os resultados para encontrar os retângulos dos caracteres em uma dada palavra funcionam perfeitamente, até onde pudemos testar. Isso ocorre porque as letras são conectadas, então podemos usar a mesma função de conectividade usada para encontrar as palavras, mas sem fazer dilatação das imagens, mantendo assim as letras separadas. Um exemplo das bounding boxes encontradas para as letras em uma palavra pode ser visualizado na \autoref{chars}.
+
+Além disso, realizamos testes com a fonte \texttt{Arial}, utilizando exemplos tanto fornecidos pela ilustríssima professora Dra. Beatriz, bem como criados pelo grupo. Um exemplo desses resultados pode ser visualizado na \autoref{arial}, onde o texto está justificado em 3 colunas com tamanho de fonte 12. O algoritmo identificou corretamente 3 colunas, 8 parágrafos, 557 palavras e 52 linhas. Já na \autoref{comic}, apresentamos o resultado de um exemplo com a fonte \texttt{Comic Sans} de tamanho 8, a menor testada no projeto. Por fim, fizemos o upload no YouTube da coleção de vídeos gerados por este trabalho, demonstrando diferentes fontes e tamanhos testados, disponíveis neste link: \url{https://www.youtube.com/watch?v=uA45GeodGss}.
+
+
+Também realizamos a detecção de caracteres, no qual os resultados para encontrar os retângulos dos caracteres em uma dada palavra funcionam perfeitamente, até onde pudemos testar. Isso ocorre porque as letras são conectadas, então podemos usar a mesma função de conectividade usada para encontrar as palavras, mas sem fazer dilatação das imagens, mantendo assim as letras separadas. Um exemplo das \textit{bounding boxes} encontradas para as letras em uma palavra pode ser visualizado na \autoref{chars}.
 
 
 \begin{figure}[h]
@@ -263,7 +260,7 @@ Também realizamos a detecção de caracteres, onde os resultados para encontrar
 
 
 
-\chapter{Instruções \& Observações sobre o Projeto}
+\chapter{Instruções e Observações sobre o Projeto}
 \label{ch-notas}
 
 
@@ -283,7 +280,7 @@ _16_colunas_2_blocos_4_linhas_39_palavras_318.pbm
 
 
 \subsection{Formato das Imagens de Teste Criadas pelo Grupo}
-Se nenhuma imagem for fornecida, será usada uma imagem padrão. Imagens de exemplo adicionais geradas pelo nosso grupo podem ser encontradas na pasta "\texttt{assets}". Essas imagens seguem o padrão adaptado do documento PreOCR, pois precisamos identificar mais detalhes sobre a imagem. Seja $F$, $T$, $C$, $B$, $L$ e $P$ variáveis que representam informações sobre a fonte (tipo) e se é justificado, centralizado, etc., tamanho, número de colunas, número de linhas, número de blocos e número de palavras, respectivamente. Assim, o nome das imagens de teste segue o padrão \texttt{grupo\_13\_F\_tamanho\_T\_colunas\_C\_blocos\_B\_linhas\_L\_palavras\_P}. Um exemplo é:
+Se nenhuma imagem for fornecida, será usada uma imagem padrão. Imagens de exemplo adicionais geradas pelo nosso grupo podem ser encontradas na pasta "\texttt{assets}". Essas imagens seguem o padrão adaptado do documento PreOCR, pois precisamos identificar mais detalhes sobre a imagem. Seja $F$, $T$, $C$, $B$, $L$ e $P$ variáveis que representam informações sobre a fonte (tipo e se é justificado, centralizado, etc.), tamanho, número de colunas, número de linhas, número de blocos e número de palavras, respectivamente. Assim, o nome das imagens de teste segue o padrão \texttt{grupo\_13\_F\_tamanho\_T\_colunas\_C\_blocos\_B\_linhas\_L\_palavras\_P}. Um exemplo é:
 
 
 \begin{itemize}
@@ -294,17 +291,14 @@ Se nenhuma imagem for fornecida, será usada uma imagem padrão. Imagens de exem
 
 \section{Requisitos} \label{sec-req}
 \begin{itemize}
-  \item É necessário ter o Python instalado para executar o script. A versão testada foi 3.10 e 3.11, mas possivelmente pega em versões superiores à 3.4
+  \item É necessário ter o Python instalado para executar o \textit{script}. A versão testada foi 3.10 e 3.11, mas possivelmente funciona em versões superiores à 3.4
   \item Opcionalmente se a ferramenta \texttt{ffmpeg} for instalada e esteja disponível no caminho do sistema o projeto irá gerar vídeos. No Ubuntu, \texttt{ffmpeg} pode ser instalado usando \texttt{sudo apt install ffmpeg} ou \texttt{sudo snap install ffmpeg}.
-  \item A biblioteca \texttt{numpy} é necessária para manipulação eficiente das matrizes (listas de pythons são absurdamente lentas). Foi instalado apenas pela estrutura de dados. As operações usadas do numpy são bem simples:  multiplicação de matriz por escalar; tirar o máximo ou mínimo de matrizes; soma e subtração de matrizes. Pode ser instalada via \texttt{pip install numpy}. Se o \texttt{pip} não estiver instalado, ele pode ser obtido executando \texttt{sudo apt install python3-pip} no Ubuntu. \end{itemize}
+  \item A biblioteca \texttt{NumPy} é necessária para manipulação eficiente das matrizes (listas de python são absurdamente lentas). Foi instalado apenas pela estrutura de dados. As operações usadas do numpy são bem simples:  multiplicação de matriz por escalar; tirar o máximo ou mínimo de matrizes; soma e subtração de matrizes. Pode ser instalada via \texttt{pip install numpy}. Se o \texttt{pip} não estiver instalado, ele pode ser obtido executando \texttt{sudo apt install python3-pip} no Ubuntu. \end{itemize}
 
 
 \section{Observações}
 
-
-
-
-Todos os arquivos gerados durante a execução do projeto são armazenados na pasta "\texttt{output/}", com exceção do arquivo principal que contém os retângulos das palavras em vermelho e do arquivo de vídeo. Esses dois arquivos são prefixados com "\texttt{group\_13}" e estão localizados no diretório atual.
+Todos os arquivos gerados durante a execução do projeto são armazenados na pasta "\texttt{output/}", com exceção do arquivo principal que contém os retângulos das palavras em vermelho e do arquivo de vídeo. Esses dois arquivos são prefixados com ``\texttt{group\_13}'' e estão localizados no diretório atual.
 O site \href{https://convertio.co/pdf-pbm/}{convertio.co} foi usado para converter arquivos PDF para o formato PBM para arquivos de entrada adicionais. As pastas e seus conteúdos, ilustrados na \autoref{folders}, estão organizados da seguinte forma:
 
 
@@ -314,7 +308,7 @@ O site \href{https://convertio.co/pdf-pbm/}{convertio.co} foi usado para convert
 \item \textbf{src/main.py}: arquivo principal do projeto contendo o código de execução principal.
 \item \textbf{src/ocr.py}: implementação da detecção e da tentativa de reconhecimento óptico de caracteres.
 \item \textbf{src/pim.py}: implementação das funções de processamento de imagens usadas: dilatação, erosão, filtro mediana.
-\item \textbf{src/utils.py}: contém funções de utilidade como ler imagem, escrever imagem, fazer resize de imagem.
+\item \textbf{src/utils.py}: contém funções de utilidade como ler imagem, escrever imagem, fazer \textit{resize} de imagem.
 \item \textbf{assets/}: contém as imagem \texttt{.pbm} criados pelo grupo.
 \item \textbf{assets/letters/}: contém os modelos de letras utilizados na tentativa de reconhecimento de caracteres.
 \item \textbf{assets/professora/}: contém as imagens .pbm disponibilizadas pela professora, mas com os nomes adaptados.
@@ -332,7 +326,7 @@ O site \href{https://convertio.co/pdf-pbm/}{convertio.co} foi usado para convert
 \end{figure}
 
 
-No exemplo de execução do projeto apresentado no \autoref{usage}, são fornecidas diversas informações úteis durante a execução do comando. Essas informações incluem o tempo decorrido para cada etapa do processamento, como a leitura do arquivo de imagem, aplicação de filtros, aplicação da dilatação, detecção de componentes conectados, criação do vídeo resultante, entre outros. Além disso, o nome do vídeo salvo e o nome do arquivo final gerado também são exibidos durante a execução do comando. O resultado final da execução, que inclui o número total de palavras, linhas, colunas e blocos detectados na imagem processada, é apresentado na última linha, prefixado com o caractere ''\texttt{>}``.
+No exemplo de execução do projeto apresentado no \autoref{usage}, são fornecidas diversas informações úteis durante a execução do comando. Essas informações incluem o tempo decorrido para cada etapa do processamento, como a leitura do arquivo de imagem, aplicação de filtros, aplicação da dilatação, detecção de componentes conectados, criação do vídeo resultante, entre outros. Além disso, o nome do vídeo salvo e o nome do arquivo final gerado também são exibidos durante a execução do comando. O resultado final da execução, que inclui o número total de palavras, linhas, colunas e blocos detectados na imagem processada, é apresentado na última linha, prefixado com o caractere ``\texttt{>}''.
 
 
 \begin{codigo}[h]
@@ -378,7 +372,7 @@ Nesta seção, apresentamos os parâmetros utilizados nos algoritmos, incluindo 
 
 
 \begin{enumerate}
-  \item Filtro Mediana: $3 \times 3$
+  \item Filtro Mediana: $3 \times 3$;
   \item Primeira Dilatação: elemento estruturante horizontal truncada 5x5
 \[
 \begin{bmatrix}
@@ -387,7 +381,7 @@ Nesta seção, apresentamos os parâmetros utilizados nos algoritmos, incluindo 
 0 & 1 & 1 & 1 & 1 \\
 0 & 0 & 0 & 0 & 0 \\
 0 & 0 & 0 & 0 & 0 \\
-\end{bmatrix}
+\end{bmatrix};
 \]
   \item Fechamento: elemento estruturante para dilatação horizontal 3x3
 \[
@@ -395,7 +389,7 @@ Nesta seção, apresentamos os parâmetros utilizados nos algoritmos, incluindo 
 0 & 0 & 0 \\
 1 & 1 & 1 \\
 0 & 0 & 0 \\
-\end{bmatrix}
+\end{bmatrix};
 \]
 
 
@@ -409,13 +403,13 @@ Nesta seção, apresentamos os parâmetros utilizados nos algoritmos, incluindo 
 1 & 1 & 1 & 1 & 1 \\
 0 & 0 & 0 & 0 & 0 \\
 0 & 0 & 0 & 0 & 0 \\
-\end{bmatrix}
+\end{bmatrix};
 \]
        
-\item Limiar para ocorrer dilatação condicional: altura mediana deve ser superior a 31 pixels.
+\item Limiar para ocorrer dilatação condicional: altura mediana deve ser superior a 31 pixels;
 
 
-\item Cálculo da quantidade de iterações para dilatação condicional: \texttt{round}(1 + altura\_mediana / 31)
+\item Cálculo da quantidade de iterações para dilatação condicional: \texttt{round(1 + altura\_mediana / 31)};
 
 
 \item Componentes Conectados: consideramos 8-conectividade, isto é, as diagonais são consideradas conectadas.
@@ -442,7 +436,7 @@ Nesta seção, apresentamos os parâmetros utilizados nos algoritmos, incluindo 
 
 
 
-O algoritmo inicia com um pré-processamento da imagem de entrada, aplicando o filtro da mediana (denominado \texttt{median\_blur} no código) e invertendo as cores para remover possíveis ruídos, como o ruído do tipo sal e pimenta, como demonstrado na \autoref{ruidos}. Já que foi confirmado que os ruídos não passam do tamanho de 1 pixel, um filtro mediano $3 \times 3$ é suficiente para este propósito, sua implementação é detalhada na \autoref{sec-mediana}. A inversão da imagem é realizada para facilitar a aplicação de algoritmos morfológicos, como a dilatação.
+O algoritmo inicia com um pré-processamento da imagem de entrada, aplicando o filtro da mediana (denominado \texttt{median\_blur} no código) e invertendo as cores para remover possíveis ruídos do tipo sal e pimenta, como demonstrado na \autoref{ruidos}. Já que foi confirmado que os ruídos não passam do tamanho de 1 pixel, um filtro mediano $3 \times 3$ é suficiente para este propósito, sua implementação é detalhada na \autoref{sec-mediana}. A inversão da imagem é realizada para facilitar a aplicação de algoritmos morfológicos, como a dilatação.
 
 
 A dilatação é então aplicada para melhorar a conectividade dos componentes de texto (palavras) na imagem. Detalhes adicionais sobre como encontrar esses componentes conectados podem ser encontrados na \autoref{sec-comp}. Dependendo dos parâmetros especificados, o algoritmo pode realizar operações adicionais, como fechamento (\texttt{closing}) ou abertura (\texttt{opening}), para refinar ainda mais as regiões de texto. Mais informações sobre a implementação das funções morfológicas podem ser encontradas na \autoref{sec-morph}.
@@ -451,7 +445,7 @@ A dilatação é então aplicada para melhorar a conectividade dos componentes d
 A abordagem do algoritmo inclui o uso de um elemento estruturante (SE) para conectar as letras. Diferentes tipos de SEs foram testados, como SEs circulares, em forma de cruz e verticais. No entanto, o SE horizontal mostrou-se mais eficaz, dada a tendência das letras de estarem alinhadas horizontalmente. Esta escolha é justificada pela necessidade de expandir as letras na direção horizontal para conectá-las, como exemplificado na \autoref{horz}.
 
 
-Além disso, são apresentadas a lógica para contagem de linhas e colunas na \autoref{sec-contagem} e detalhes sobre a detecção e tentativa de reconhecimento de caracteres na \autoref{sec-ocr}.
+Além disso, é apresentada a lógica para contagem de linhas e colunas na \autoref{sec-contagem}. Detalhes sobre a detecção e tentativa de reconhecimento de caracteres na \autoref{sec-ocr}.
 
 
 \begin{figure}[htb]
@@ -466,7 +460,7 @@ Além disso, são apresentadas a lógica para contagem de linhas e colunas na \a
 
 
 \begin{figure}[htb]
-        \caption{\label{horz} \small Resultado da aplicação de 2 iterações de dilatação com SE horizontal 5x5. }
+        \caption{\label{horz} \small Resultado da aplicação de 2 iterações de dilatação com elementro estruturante horizontal 5x5. }
         \begin{center}
             \includegraphics[scale=0.15]{./images/horizontal_5x5_aplicacao.png}
         \end{center}
@@ -482,11 +476,10 @@ Além disso, são apresentadas a lógica para contagem de linhas e colunas na \a
 
 
 
+As operações de dilatação horizontal notavelmente aprimoraram a conectividade entre caracteres adjacentes na imagem. Esses conjuntos conectados de pixels representam as palavras individuais dentro da imagem. O conceito de componentes conectados é fundamentado em grafos e pode ser aplicado a imagens binárias, tal que os pixels brancos correspondem aos nós. Existem diferentes tipos de conectividade. Se considerarmos apenas os vizinhos de um pixel como à esquerda, à direita, acima e abaixo, temos o que chamamos de 4-conectividade \cite[2.5.2 \textit{Adjacency, Connectivity, Regions, and Boundaries}]{gonzalez2008digital}. Ao adicionar as diagonais, obtemos a 8-conectividade.
 
-As operações de dilatação horizontal notavelmente aprimoraram a conectividade entre caracteres adjacentes na imagem. Esses conjuntos conectados de pixels representam as palavras individuais dentro da imagem. O conceito de componentes conectados é fundamentado em grafos e pode ser aplicado a imagens binárias, onde os pixels brancos correspondem aos nós. Existem diferentes tipos de conectividade. Se considerarmos apenas os vizinhos de um pixel como à esquerda, à direita, acima e abaixo, temos o que chamamos de 4-conectividade \cite[2.5.2 Adjacency, Connectivity, Regions, and Boundaries]{gonzalez2008digital}. Ao adicionar as diagonais, obtemos a 8-conectividade.
 
-
-O algoritmo descrito no \autoref{cod-findcomp} identifica esses componentes conectados e se baseia em uma busca em profundidade, marcando os pixels visitados. A busca continua até que não haja mais caminhos a serem explorados na imagem, considerando também as diagonais, se \texttt{connectivity} for igual 8). Quando não há mais caminhos a serem percorridos, o conjunto de pixels visitados forma um componente conectado. Esse processo é repetido até que todos os componentes tenham sido identificados, atualizando os pontos mais à esquerda inferior e mais à direita superior do componente, formando a \textit{bounding box} da palavra.
+O algoritmo descrito no \autoref{cod-findcomp} identifica esses componentes conectados e se baseia em uma busca em profundidade, marcando os pixels visitados. A busca continua até que não haja mais caminhos a serem explorados na imagem, considerando também as diagonais, se \texttt{connectivity} for igual 8. Quando não há mais caminhos a serem percorridos, o conjunto de pixels visitados forma um componente conectado. Esse processo é repetido até que todos os componentes tenham sido identificados, atualizando os pontos mais à esquerda inferior e mais à direita superior do componente, formando a \textit{bounding box} da palavra.
 
 
 Em seguida, um retângulo é desenhado ao redor dessas palavras na imagem de saída. Opcionalmente, as palavras isoladas podem ser escritas em uma nova imagem, para uso posterior em tentativas de reconhecimento óptico de caracteres (OCR). Após a identificação dos componentes de texto, é realizada uma filtragem para eliminar as \textit{bounding boxes} correspondentes à pontuação (vírgulas, pontos) e manter apenas aquelas associadas às palavras.
@@ -594,10 +587,10 @@ def group_bboxes(bboxes, max_distance, image) -> list[list]:
 
 
 
-O processo de reconhecimento de caracteres é composto por três etapas principais: a detecção dos caracteres na imagem, a correspondência desses caracteres com os modelos predefinidos e o reconhecimento. Durante essa sequência, as \textit{bounding boxes} são geradas para cada caractere detectado. O \autoref{cod-ocr} mostra esse processo. Nele é carregado modelos de letras predefinidos no diretório \texttt{./assets/letters/}. Esses modelos são imagens binárias de letras individuais, como "v", "o", "l" e "t", com cada letra invertida para garantir que os pixels de interesse (brancos) tenham o valor 255 e os pixels de fundo (pretos) tenham o valor 0. A imagem a ser comparada é a sub-imagem que contém o caractere detectado; em seguida, as \textit{bounding boxes} são ordenadas da esquerda para a direita, seguindo a ordem de leitura.
+O processo de reconhecimento de caracteres é composto por três etapas principais: a detecção dos caracteres na imagem, a correspondência desses caracteres com os modelos predefinidos e o reconhecimento. Durante essa sequência, as \textit{bounding boxes} são geradas para cada caractere detectado. O \autoref{cod-ocr} mostra esse processo, nele é carregado modelos de letras predefinidos no diretório \texttt{assets/letters/}. Esses modelos são imagens binárias de letras individuais, como "v", "o", "l" e "t", com cada letra invertida para garantir que os pixels de interesse (brancos) tenham o valor 255 e os pixels de fundo (pretos) tenham o valor 0. A imagem a ser comparada é a sub-imagem que contém o caractere detectado; em seguida, as \textit{bounding boxes} são ordenadas da esquerda para a direita, seguindo a ordem de leitura.
 
 
-Este recorte da letra é redimensionado para ter o mesmo tamanho das letras de referência. Para cada letra de referência, calcula-se a similaridade entre a letra recortada e o modelo. Essa similaridade é medida contando o número de pixels brancos iguais, nas mesmas coordenadas nas duas imagens. A letra com a maior similaridade é considerada a melhor correspondência para a região.
+Este recorte da letra é redimensionado para ter o mesmo tamanho das letras de referência. Para cada letra de referência, calcula-se a similaridade entre a letra recortada e o modelo. Essa similaridade é medida contando o número de pixels brancos iguais que estão na mesma coordenada nas duas imagens. A letra com a maior similaridade é considerada a melhor correspondência para a região.
 
 
 
@@ -658,7 +651,7 @@ def string(img, letters):
  A dilatação morfológica é útil para preencher pequenos espaços entre objetos. No \autoref{udilate}, a função `understandable\_dilate` implementa a dilatação de forma "compreensível", mais compativel com a definição dada em \citeonline[9.2.2 Dilation]{gonzalez2008digital}.
 
 
- Nessa implementação a variável \texttt{kernel} representa o elemento estruturante, que define a forma e o tamanho da dilatação. Durante o processo, a imagem é percorrida pixel a pixel, e para cada pixel, verifica-se se pelo menos um dos pixels na vizinhança definida pelo kernel é branco (valor 255). Se pelo menos um dos pixels na vizinhança é branco, o pixel central é definido como branco (255) na imagem resultante. Caso contrário, o pixel central é definido como preto (0).
+ Nessa implementação a variável \texttt{kernel} representa o elemento estruturante, que define a forma e o tamanho da dilatação. Durante o processo, a imagem é percorrida pixel a pixel, e para cada pixel, verifica-se se pelo menos um dos pixels na vizinhança definida pelo kernel é branco (valor 255). Se for o caso, então o pixel central é definido como 255 na imagem resultante. Caso contrário, o pixel central é definido como 0.
 
 
  Uma interpretação útil é que o elemento estruturante define qual é a vizinhança, onde tiver 1 no elemento indica que faz parte da vizinhança, se tiver zero então não faz parte. Para cada x e y percorridos a imagem resultado é o máximo o valor de sua vizinhança definido pelo elemento estruturante.
@@ -771,7 +764,7 @@ A erosão segue o mesmo princípio da dilatação, mas com a operação sendo o 
 
 
 
-\subsubsection{Filtro Mediana} \label{sec-mediana}
+\subsection{Filtro Mediana} \label{sec-mediana}
 
 
 O \autoref{cod-mediana} implementa um filtro de mediana. Ele percorre cada pixel da imagem e substitui o valor do pixel pela mediana dos valores dos pixels em sua vizinhança, definida pelo tamanho do filtro. Isso ajuda a remover ruídos e detalhes pequenos.
@@ -813,13 +806,13 @@ def understandable_median_blur(image, filter_size=3):
 \end{codigo}
 
 
-\subsubsection{Contagens} \label{sec-contagem}
+\subsection{Contagens} \label{sec-contagem}
 
 
-A contagem de linhas, proposto no \autoref{cod-linecount}, verifica se a lista de retângulos está vazia, depois as \textit{bounding boxes} ordenadas verticalmente com base na coordenada y. Para cada \textit{bounding box}, calcula-se a sobreposição vertical com a anterior. Se a sobreposição for menor que uma fração mínima, contamos uma nova linha. Na \autoref{fig-linecount}, temos uma representação do retângulo da linha em uma dada iteração desse algoritmo.
+A contagem de linhas, proposto no \autoref{cod-linecount}, verifica se a lista de retângulos está vazia, depois as \textit{bounding boxes} ordenadas verticalmente com base na coordenada y. Para cada \textit{bounding box}, calcula-se a sobreposição vertical com a anterior. Se a sobreposição for menor que uma fração mínima, contamos uma nova linha. Na \autoref{fig-linecount}, temos uma representação do retângulo, em azul, da linha em uma dada iteração desse algoritmo.
 
 
-O algoritmo para contar colunas (\autoref{cod-columncount}) é semelhante ao de linhas, mas agora classificamos os retângulos horizontalmente em vez de verticalmente. Para cada retângulo ordenado, verificamos se sua coordenada x do canto inferior esquerdo é maior do que a coordenada x do canto inferior direito da caixa mais à direita encontrada até o momento (\texttt{max\_right}). Se for, consideramos isso como o início de uma nova coluna. Além disso, desenhamos uma linha vertical indicando o início da nova coluna na imagem de vídeo.
+O algoritmo para contar colunas (\autoref{cod-columncount}) é semelhante ao de linhas, mas agora classificamos os retângulos horizontalmente em vez de verticalmente. Para cada retângulo ordenado, verificamos se sua coordenada x do canto inferior esquerdo é maior do que a coordenada x do canto inferior direito da caixa mais à direita encontrada até o momento (\texttt{max\_right}). Se for, consideramos isso como o início de uma nova coluna. Além disso, desenhamos uma linha vertical, em amarelo, indicando o início da nova coluna na imagem de vídeo.
 
 
 \begin{codigo}[h]
