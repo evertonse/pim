@@ -14,7 +14,7 @@
 
 ## Tips
 
-- when correcting grammar using google docs, donwload the the document as plain text then copy and paste. Trying to copy directly from the site might cause trouble with especial caracters such as uppercase Â.
+- when correcting grammar using google docs, donwload the the document as plain text then copy and paste into and from notepad. Trying to copy directly from the site might cause trouble with especial caracters such as uppercase Â.
 
 
 ## Packages Needed
